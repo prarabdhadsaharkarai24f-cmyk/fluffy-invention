@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zade Traders - Building Materials POS & Automation</title>
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN for beautiful reports -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Background glowing shapes for glassmorphism aesthetics -->
+    <div class="bg-shape shape1"></div>
+    <div class="bg-shape shape2"></div>
+    <div class="bg-shape shape3"></div>
+
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar glass-panel">
+            <div class="logo">
+                <div class="logo-icon-wrapper">
+                    <i class="fa-solid fa-trowel-bricks"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="brand-name">Zade Traders</span>
+                    <span class="brand-location">Materials</span>
+                </div>
+            </div>
+            
+            <nav class="nav-links">
+                <a href="#" class="nav-item active" data-target="panel-dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+                <a href="#" class="nav-item" data-target="panel-pos"><i class="fa-solid fa-cash-register"></i> Customer Billing</a>
+                <a href="#" class="nav-item" data-target="panel-inventory"><i class="fa-solid fa-boxes-stacked"></i> Materials Stock</a>
+                <a href="#" class="nav-item" data-target="panel-purchases"><i class="fa-solid fa-truck-ramp-box"></i> Purchase Entry</a>
+                <a href="#" class="nav-item" data-target="panel-khata"><i class="fa-solid fa-address-book"></i> Customer Khata</a>
+                <a href="#" class="nav-item" data-target="panel-supplier-khata"><i class="fa-solid fa-truck-field"></i> Supplier Khata</a>
+                <a href="#" class="nav-item" data-target="panel-settings"><i class="fa-solid fa-sliders"></i> Settings</a>
+            </nav>
+
+            <div class="user-profile">
+                <div class="avatar-icon"><i class="fa-solid fa-user-tie"></i></div>
+                <div class="user-info">
+                    <span class="user-name" id="operator-name">Admin Operator</span>
+                    <span class="home-status"><span class="dot green"></span> System Online</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="greeting">
+                    <h1 id="greeting-text">Zade Traders</h1>
+                    <p id="current-date-time"><i class="fa-regular fa-clock"></i> Loading date and time...</p>
+                </div>
+                
+                <div class="header-actions">
+                    <div class="server-status glass-panel" id="db-status">
+                        <i class="fa-solid fa-database text-green"></i>
+                        <span>Building Supplies DB Online</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- ========================================================= -->
+            <!-- 1. DASHBOARD PANEL -->
+            <!-- ========================================================= -->
+            <div id="panel-dashboard" class="workspace-panel active">
+                <div class="kpi-grid dashboard-materials-kpis">
+                    <div class="kpi-card glass-panel glow-teal">
+                        <div class="kpi-icon"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+                        <div class="kpi-details">
+                            <span class="kpi-title">Today's Sales</span>
+                            <h2 class="kpi-value" id="kpi-today-sales">₹0.00</h2>
+                            <p class="kpi-desc">Customer cash flow</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card glass-panel glow-emerald">
+                        <div class="kpi-icon"><i class="fa-solid fa-chart-line"></i></div>
+                        <div class="kpi-details">
+                            <span class="kpi-title">Total Sales Revenue</span>
+                            <h2 class="kpi-value" id="kpi-total-revenue">₹0.00</h2>
+                            <p class="kpi-desc">Aggregated retail sales</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card glass-panel glow-orange">
+                        <div class="kpi-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                        <div class="kpi-details">
+                            <span class="kpi-title">Customer Receivables</span>
+                            <h2 class="kpi-value text-orange" id="kpi-outstanding-khata">₹0.00</h2>
+                            <p class="kpi-desc">Outstanding Khata credit</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card glass-panel glow-purple">
+                        <div class="kpi-icon"><i class="fa-solid fa-truck-arrow-right"></i></div>
+                        <div class="kpi-details">
+                            <span class="kpi-title">Supplier Payables</span>
+                            <h2 class="kpi-value text-purple" id="kpi-outstanding-supplier">₹0.00</h2>
+                            <p class="kpi-desc">Wholesale debts we owe</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card glass-panel glow-red" id="kpi-low-stock-card">
+                        <div class="kpi-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        <div class="kpi-details">
+                            <span class="kpi-title">Low Stock Alerts</span>
+                            <h2 class="kpi-value" id="kpi-low-stock">0</h2>
+                            <p class="kpi-desc">Materials below limits</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <!-- Chart Widget -->
+                    <div class="widget glass-panel span-2">
+                        <div class="widget-header">
+                            <h2><i class="fa-solid fa-chart-column text-teal"></i> Customer Sales Trend (Past 7 Days)</h2>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="salesChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Side Stats Widgets -->
+                    <div class="widget glass-panel row-span-2">
+                        <div class="widget-header">
+                            <h2><i class="fa-solid fa-triangle-exclamation text-red"></i> Material Stock Alerts</h2>
+                        </div>
+                        <div class="low-stock-feed" id="dashboard-low-stock-list">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Recent Sales Widget -->
+                    <div class="widget glass-panel">
+                        <div class="widget-header">
+                            <h2><i class="fa-solid fa-receipt text-teal"></i> Recent Sales</h2>
+                            <button class="btn-text" id="btn-view-all-sales">View POS</button>
+                        </div>
+                        <div class="recent-transactions-list" id="dashboard-recent-sales">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Recent Purchases Widget -->
+                    <div class="widget glass-panel">
+                        <div class="widget-header">
+                            <h2><i class="fa-solid fa-truck-moving text-purple"></i> Recent Purchases</h2>
+                        </div>
+                        <div class="recent-transactions-list" id="dashboard-recent-purchases">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================================= -->
+            <!-- 2. POS BILLING PANEL -->
+            <!-- ========================================================= -->
+            <div id="panel-pos" class="workspace-panel">
+                <div class="pos-layout">
+                    <!-- Left: Catalog -->
+                    <div class="pos-catalog">
+                        <div class="catalog-filters glass-panel">
+                            <div class="search-wrapper">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="catalog-search" placeholder="Search cement, steel, bricks, paint...">
+                            </div>
+                            <div class="category-tabs" id="catalog-categories">
+                                <button class="category-tab active" data-category="all">All</button>
+                                <button class="category-tab" data-category="cement">Cement</button>
+                                <button class="category-tab" data-category="steel">Steel</button>
+                                <button class="category-tab" data-category="bricks">Bricks</button>
+                                <button class="category-tab" data-category="aggregates">Aggregates</button>
+                                <button class="category-tab" data-category="paints">Paints</button>
+                                <button class="category-tab" data-category="plumbing">Plumbing</button>
+                            </div>
+                        </div>
+                        <div class="catalog-grid" id="catalog-products-grid">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Right: Cart & Checkout -->
+                    <div class="pos-cart glass-panel">
+                        <div class="cart-header">
+                            <h2><i class="fa-solid fa-cart-shopping text-teal"></i> Customer Invoice</h2>
+                            <button class="btn-clear-cart" id="btn-clear-cart" title="Clear Cart"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                        
+                        <!-- Customer Selection -->
+                        <div class="customer-select-box">
+                            <div class="select-group">
+                                <label for="cart-customer-select">Select Customer Builder</label>
+                                <div class="select-with-add">
+                                    <select id="cart-customer-select" class="glass-input">
+                                        <option value="0">Cash Customer</option>
+                                        <!-- Loaded by JS -->
+                                    </select>
+                                    <button class="btn-icon-add" id="btn-add-customer-modal" title="Add Customer"><i class="fa-solid fa-plus"></i></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cart Items List -->
+                        <div class="cart-items-container" id="cart-items-list">
+                            <!-- Populated by JS -->
+                        </div>
+
+                        <!-- Cart Calculations -->
+                        <div class="cart-summary">
+                            <div class="summary-row">
+                                <span>Subtotal (Excl. Tax)</span>
+                                <span id="cart-subtotal">₹0.00</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>GST (CGST + SGST)</span>
+                                <span id="cart-gst">₹0.00</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>Discount (₹)</span>
+                                <input type="number" id="cart-discount" class="glass-input summary-discount-input" min="0" value="0">
+                            </div>
+                            <div class="summary-row grand-total-row">
+                                <span>Grand Total</span>
+                                <span id="cart-total" class="text-teal">₹0.00</span>
+                            </div>
+                        </div>
+
+                        <!-- Payment Method -->
+                        <div class="payment-method-selector">
+                            <label>Payment Mode</label>
+                            <div class="payment-options">
+                                <label class="payment-option">
+                                    <input type="radio" name="payment-method" value="Cash" checked>
+                                    <span class="option-btn"><i class="fa-solid fa-money-bill-1"></i> Cash</span>
+                                </label>
+                                <label class="payment-option">
+                                    <input type="radio" name="payment-method" value="UPI">
+                                    <span class="option-btn"><i class="fa-solid fa-qrcode"></i> UPI QR</span>
+                                </label>
+                                <label class="payment-option" id="khata-payment-option-label">
+                                    <input type="radio" name="payment-method" value="Khata">
+                                    <span class="option-btn"><i class="fa-solid fa-book"></i> Khata Credit</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Checkout Trigger -->
+                        <button class="btn-checkout" id="btn-checkout">
+                            <i class="fa-solid fa-cash-register"></i> Complete Checkout & Print
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================================= -->
+            <!-- 3. INVENTORY PANEL -->
+            <!-- ========================================================= -->
+            <div id="panel-inventory" class="workspace-panel">
+                <div class="inventory-controls glass-panel">
+                    <div class="search-wrapper">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="inventory-search" placeholder="Search cement, steel sizes, paint colors, pipes...">
+                    </div>
+                    <div class="control-actions">
+                        <select id="inventory-filter-category" class="glass-input">
+                            <option value="all">All Material Categories</option>
+                            <option value="cement">Cement</option>
+                            <option value="steel">Steel</option>
+                            <option value="bricks">Bricks</option>
+                            <option value="aggregates">Aggregates</option>
+                            <option value="paints">Paints</option>
+                            <option value="plumbing">Plumbing</option>
+                            <option value="general">General Hardware</option>
+                        </select>
+                        <button class="btn-primary" id="btn-new-product"><i class="fa-solid fa-plus"></i> Add New Product</button>
+                    </div>
+                </div>
+
+                <div class="table-container glass-panel">
+                    <table class="data-table" id="inventory-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Product Details</th>
+                                <th>Category</th>
+                                <th class="text-right">Buy Price</th>
+                                <th class="text-right">Sell Price</th>
+                                <th class="text-right">Current Stock</th>
+                                <th>Unit</th>
+                                <th>GST Rate</th>
+                                <th>Stock Status</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-table-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ========================================================= -->
+            <!-- 4. PURCHASE ENTRY PANEL (NEW) -->
+            <!-- ========================================================= -->
+            <div id="panel-purchases" class="workspace-panel">
+                <div class="pos-layout">
+                    <!-- Left: Wholesale Purchase Item Selector Form -->
+                    <div class="pos-catalog glass-panel" style="padding: 24px;">
+                        <h2 style="font-family: var(--font-display); font-size:1.25rem; font-weight:600; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;"><i class="fa-solid fa-truck-ramp-box text-purple"></i> Wholesale Materials Shipment details</h2>
+                        <form id="purchase-item-adder-form" class="modal-form">
+                            <div class="form-group">
+                                <label for="purchase-product-select">Select Product from Inventory</label>
+                                <select id="purchase-product-select" class="glass-input" required>
+                                    <option value="">-- Choose Material --</option>
+                                    <!-- Loaded by JS -->
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="purchase-item-qty">Quantity Purchased</label>
+                                    <input type="number" id="purchase-item-qty" class="glass-input" step="0.01" min="0.01" required placeholder="e.g. 50">
+                                </div>
+                                <div class="form-group">
+                                    <label for="purchase-item-unit">Unit</label>
+                                    <input type="text" id="purchase-item-unit" class="glass-input" readonly style="opacity: 0.7; background: rgba(255,255,255,0.02)">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="purchase-item-rate">Wholesale Purchase Price (₹) *</label>
+                                    <input type="number" id="purchase-item-rate" class="glass-input" step="0.01" min="0" required placeholder="0.00">
+                                </div>
+                                <div class="form-group">
+                                    <label for="purchase-item-gst">GST Bracket (%)</label>
+                                    <input type="text" id="purchase-item-gst" class="glass-input" readonly style="opacity: 0.7; background: rgba(255,255,255,0.02)">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-primary btn-full-width" style="background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%); box-shadow: 0 4px 15px rgba(167, 139, 250, 0.25);"><i class="fa-solid fa-cart-plus"></i> Add Material to Purchase Bill</button>
+                        </form>
+                    </div>
+
+                    <!-- Right: Wholesale Purchase Bill summary -->
+                    <div class="pos-cart glass-panel">
+                        <div class="cart-header">
+                            <h2><i class="fa-solid fa-receipt text-purple"></i> Purchase Bill Summary</h2>
+                            <button class="btn-clear-cart" id="btn-clear-purchase-cart" title="Clear Bill"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+
+                        <!-- Supplier Selector -->
+                        <div class="customer-select-box">
+                            <div class="select-group">
+                                <label for="purchase-supplier-select">Wholesale Supplier</label>
+                                <div class="select-with-add">
+                                    <select id="purchase-supplier-select" class="glass-input">
+                                        <option value="0">Local Cash Supplier</option>
+                                        <!-- Loaded by JS -->
+                                    </select>
+                                    <button class="btn-icon-add" id="btn-add-supplier-modal" title="Add Supplier"><i class="fa-solid fa-plus"></i></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Purchase cart items -->
+                        <div class="cart-items-container" id="purchase-cart-items-list">
+                            <div class="cart-empty-state">
+                                <i class="fa-solid fa-truck-loading"></i>
+                                <p>Purchase Bill is empty</p>
+                                <span>Add wholesale products on the left to receive stock</span>
+                            </div>
+                        </div>
+
+                        <!-- Calculations -->
+                        <div class="cart-summary">
+                            <div class="summary-row">
+                                <span>Subtotal (Excl. GST)</span>
+                                <span id="purchase-subtotal">₹0.00</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>Wholesale GST</span>
+                                <span id="purchase-gst">₹0.00</span>
+                            </div>
+                            <div class="summary-row grand-total-row">
+                                <span>Net Purchase Value</span>
+                                <span id="purchase-total" class="text-purple">₹0.00</span>
+                            </div>
+                        </div>
+
+                        <!-- Purchase Payment Method -->
+                        <div class="payment-method-selector">
+                            <label>Payment Account</label>
+                            <div class="payment-options">
+                                <label class="payment-option">
+                                    <input type="radio" name="purchase-payment-method" value="Cash" checked>
+                                    <span class="option-btn"><i class="fa-solid fa-wallet"></i> Cash / Bank</span>
+                                </label>
+                                <label class="payment-option" id="supplier-credit-option-label">
+                                    <input type="radio" name="purchase-payment-method" value="Credit">
+                                    <span class="option-btn"><i class="fa-solid fa-book"></i> Credit Ledger</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <button class="btn-checkout" id="btn-purchase-checkout" style="background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%); box-shadow: 0 4px 20px rgba(167, 139, 250, 0.25);">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Record Purchase & Load Stock
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================================= -->
+            <!-- 5. CUSTOMER KHATA PANEL -->
+            <!-- ========================================================= -->
+            <div id="panel-khata" class="workspace-panel">
+                <!-- Customer Listing view -->
+                <div id="khata-customers-view">
+                    <div class="inventory-controls glass-panel">
+                        <div class="search-wrapper">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="khata-search" placeholder="Search builder, contractor by name, phone...">
+                        </div>
+                        <button class="btn-primary" id="btn-new-customer"><i class="fa-solid fa-user-plus"></i> Add Customer Profile</button>
+                    </div>
+
+                    <div class="customers-grid" id="khata-customers-grid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Individual Customer Ledger View (Hidden by default) -->
+                <div id="khata-ledger-detail-view" class="hidden">
+                    <div class="ledger-header glass-panel">
+                        <button class="btn-back" id="btn-back-to-khata-list"><i class="fa-solid fa-arrow-left"></i> Back to Customer list</button>
+                        <div class="customer-ledger-profile">
+                            <div class="avatar-icon large"><i class="fa-solid fa-user-gear"></i></div>
+                            <div class="profile-info">
+                                <h2 id="ledger-cust-name">Ramesh Gawande</h2>
+                                <p id="ledger-cust-phone"><i class="fa-solid fa-phone"></i> +91 98234 56789</p>
+                                <p id="ledger-cust-address"><i class="fa-solid fa-location-dot"></i> Umred Rural</p>
+                            </div>
+                            <div class="ledger-balances">
+                                <div class="bal-card">
+                                    <span>Outstanding Balance</span>
+                                    <h3 class="text-orange" id="ledger-outstanding-val">₹0.00</h3>
+                                </div>
+                                <div class="bal-card">
+                                    <span>Credit limit</span>
+                                    <h3 id="ledger-limit-val">₹0.00</h3>
+                                </div>
+                                <div class="bal-card credit-usage-bar-wrapper">
+                                    <span>Credit Limit Usage</span>
+                                    <div class="progress-bar-container">
+                                        <div class="progress-bar" id="ledger-progress-bar" style="width: 0%;"></div>
+                                    </div>
+                                    <span class="usage-text" id="ledger-usage-percent">0% Used</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ledger-main-grid">
+                        <!-- Left: Ledger Statement -->
+                        <div class="widget glass-panel span-2">
+                            <div class="widget-header">
+                                <h3><i class="fa-solid fa-book-open text-teal"></i> Customer Ledger Account Statement</h3>
+                            </div>
+                            <div class="table-container inline-table">
+                                <table class="data-table" id="customer-ledger-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Date & Time</th>
+                                            <th>Type</th>
+                                            <th>Ref Invoice</th>
+                                            <th class="text-right">Debit (We Sold)</th>
+                                            <th class="text-right">Credit (Received)</th>
+                                            <th class="text-right">Receivable Balance</th>
+                                            <th class="text-center">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="customer-ledger-table-body">
+                                        <!-- Loaded by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Right: Record Customer Payment -->
+                        <div class="widget glass-panel">
+                            <div class="widget-header">
+                                <h3><i class="fa-solid fa-money-bill-transfer text-green"></i> Record Credit Payment</h3>
+                            </div>
+                            <form id="record-payment-form" class="ledger-payment-form">
+                                <div class="form-group">
+                                    <label for="pay-amount">Amount Received (₹)</label>
+                                    <input type="number" id="pay-amount" class="glass-input" required placeholder="e.g. 10000" min="1">
+                                </div>
+                                <div class="form-group">
+                                    <label for="pay-method">Payment Mode</label>
+                                    <select id="pay-method" class="glass-input">
+                                        <option value="Cash">Cash</option>
+                                        <option value="UPI">UPI</option>
+                                        <option value="Bank Transfer">Bank Transfer</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="pay-remarks">Remarks</label>
+                                    <input type="text" id="pay-remarks" class="glass-input" placeholder="e.g. Builder partial payment">
+                                </div>
+                                <button type="submit" class="btn-primary btn-full-width"><i class="fa-solid fa-circle-check"></i> Submit Payment Receipt</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================================= -->
+            <!-- 6. SUPPLIER KHATA PANEL (NEW) -->
+            <!-- ========================================================= -->
+            <div id="panel-supplier-khata" class="workspace-panel">
+                <!-- Supplier list -->
+                <div id="khata-suppliers-view">
+                    <div class="inventory-controls glass-panel">
+                        <div class="search-wrapper">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="supplier-khata-search" placeholder="Search material supplier, vendor, manufacturer...">
+                        </div>
+                        <button class="btn-primary" id="btn-new-supplier-tab" style="background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);"><i class="fa-solid fa-truck-field"></i> Add Wholesale Supplier</button>
+                    </div>
+
+                    <div class="customers-grid" id="khata-suppliers-grid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Supplier Ledger detail (hidden) -->
+                <div id="supplier-ledger-detail-view" class="hidden">
+                    <div class="ledger-header glass-panel" style="border-left: 4px solid var(--hint-purple);">
+                        <button class="btn-back" id="btn-back-to-suppliers-list"><i class="fa-solid fa-arrow-left"></i> Back to Supplier list</button>
+                        <div class="customer-ledger-profile">
+                            <div class="avatar-icon large" style="color: var(--hint-purple);"><i class="fa-solid fa-truck-field"></i></div>
+                            <div class="profile-info">
+                                <h2 id="sup-ledger-name">Nagpur Cement Distributors</h2>
+                                <p id="sup-ledger-phone"><i class="fa-solid fa-phone"></i> +91 98222 xxxxx</p>
+                                <p id="sup-ledger-gstin"><i class="fa-solid fa-address-card"></i> GSTIN: 27AAAAA1111A1Z1</p>
+                            </div>
+                            <div class="ledger-balances" style="grid-template-columns: repeat(2, 1fr);">
+                                <div class="bal-card" style="border-color: rgba(167, 139, 250, 0.2)">
+                                    <span>Outstanding Debt (We Owe)</span>
+                                    <h3 class="text-purple" id="sup-ledger-outstanding-val" style="font-size: 1.4rem;">₹0.00</h3>
+                                </div>
+                                <div class="bal-card">
+                                    <span>Address</span>
+                                    <h4 id="sup-ledger-address" style="font-weight: 500; font-size: 0.8rem; margin-top:4px;">Nagpur MIDC</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ledger-main-grid">
+                        <!-- Left: Purchases & Repayments Log -->
+                        <div class="widget glass-panel span-2">
+                            <div class="widget-header">
+                                <h3><i class="fa-solid fa-book-open text-purple"></i> Wholesale Ledger Account Statement</h3>
+                            </div>
+                            <div class="table-container inline-table">
+                                <table class="data-table" id="supplier-ledger-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Date & Time</th>
+                                            <th>Type</th>
+                                            <th>Ref Purchase</th>
+                                            <th class="text-right">Debit (We Repaid)</th>
+                                            <th class="text-right">Credit (We Purchased)</th>
+                                            <th class="text-right">Payable Balance</th>
+                                            <th class="text-center">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="supplier-ledger-table-body">
+                                        <!-- Loaded by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Right: Record Repayment made to supplier -->
+                        <div class="widget glass-panel">
+                            <div class="widget-header">
+                                <h3><i class="fa-solid fa-hand-holding-hand text-purple"></i> Record Wholesale Payment</h3>
+                            </div>
+                            <form id="record-supplier-payment-form" class="ledger-payment-form">
+                                <div class="form-group">
+                                    <label for="sup-pay-amount">Amount Paid Now (₹)</label>
+                                    <input type="number" id="sup-pay-amount" class="glass-input" required placeholder="e.g. 50000" min="1">
+                                </div>
+                                <div class="form-group">
+                                    <label for="sup-pay-method">Payment Mode</label>
+                                    <select id="sup-pay-method" class="glass-input">
+                                        <option value="Bank Transfer">Bank Transfer / NEFT</option>
+                                        <option value="Cash">Cash</option>
+                                        <option value="UPI">UPI Merchant</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="sup-pay-remarks">Remarks</label>
+                                    <input type="text" id="sup-pay-remarks" class="glass-input" placeholder="e.g. Repayment against cement bill">
+                                </div>
+                                <button type="submit" class="btn-primary btn-full-width" style="background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);"><i class="fa-solid fa-circle-check"></i> Submit Repayment Receipt</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================================= -->
+            <!-- 7. SETTINGS PANEL -->
+            <!-- ========================================================= -->
+            <div id="panel-settings" class="workspace-panel">
+                <div class="settings-grid">
+                    <!-- Business Profile Info -->
+                    <div class="widget glass-panel">
+                        <div class="widget-header">
+                            <h2><i class="fa-solid fa-store text-teal"></i> Shop Profile Settings</h2>
+                        </div>
+                        <form id="settings-shop-form" class="settings-form">
+                            <div class="form-group">
+                                <label for="shop-name">Store Name</label>
+                                <input type="text" id="shop-name" class="glass-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="shop-phone">Contact Number</label>
+                                <input type="text" id="shop-phone" class="glass-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="shop-gstin">GSTIN (Indian Goods & Services Tax Number)</label>
+                                <input type="text" id="shop-gstin" class="glass-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="shop-upi">Merchant UPI ID (for QR billing)</label>
+                                <input type="text" id="shop-upi" class="glass-input" required placeholder="e.g. zadetraders@okaxis">
+                                <span class="input-tip">Dynamic QR code scanner will pay directly to this address.</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="shop-address">Store Address</label>
+                                <textarea id="shop-address" class="glass-input" rows="3" required></textarea>
+                            </div>
+                            <button type="submit" class="btn-primary"><i class="fa-solid fa-save"></i> Save Profile Details</button>
+                        </form>
+                    </div>
+
+                    <!-- Operator / System Info -->
+                    <div class="widget glass-panel">
+                        <div class="widget-header">
+                            <h2><i class="fa-solid fa-server text-purple"></i> POS Database & System</h2>
+                        </div>
+                        <div class="system-status-settings">
+                            <div class="status-indicator">
+                                <div class="indicator-row">
+                                    <span>Database File:</span>
+                                    <strong>d:\automation\data\db.json</strong>
+                                </div>
+                                <div class="indicator-row">
+                                    <span>Server Port:</span>
+                                    <strong>3000</strong>
+                                </div>
+                                <div class="indicator-row">
+                                    <span>Client Browser Agent:</span>
+                                    <strong id="browser-agent">Chrome</strong>
+                                </div>
+                                <div class="indicator-row">
+                                    <span>Database Size:</span>
+                                    <strong id="db-file-size">Loading...</strong>
+                                </div>
+                            </div>
+                            <div class="system-actions">
+                                <button class="btn-secondary" id="btn-trigger-backup"><i class="fa-solid fa-download"></i> Download Database Backup</button>
+                                <button class="btn-secondary danger" id="btn-trigger-reset"><i class="fa-solid fa-arrow-rotate-left"></i> Reset to Factory Seed Data</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================================= -->
+            <!-- MODALS -->
+            <!-- ========================================================= -->
+            
+            <!-- 1. PRODUCT MODAL (Add / Edit) -->
+            <div id="modal-product" class="modal-overlay hidden">
+                <div class="modal-content glass-panel animated-modal">
+                    <div class="modal-header">
+                        <h2 id="product-modal-title">Add New Product</h2>
+                        <button class="modal-close" id="btn-close-product-modal"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <form id="product-form" class="modal-form">
+                        <input type="hidden" id="product-id">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="prod-name">Product Name *</label>
+                                <input type="text" id="prod-name" class="glass-input" required placeholder="e.g. ACC Gold Cement (50kg Bag)">
+                            </div>
+                            <div class="form-group">
+                                <label for="prod-barcode">Barcode / Code</label>
+                                <input type="text" id="prod-barcode" class="glass-input" placeholder="Scan or enter code">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="prod-category">Category *</label>
+                                <select id="prod-category" class="glass-input" required>
+                                    <option value="Cement">Cement</option>
+                                    <option value="Steel">Steel</option>
+                                    <option value="Bricks">Bricks</option>
+                                    <option value="Aggregates">Aggregates</option>
+                                    <option value="Paints">Paints</option>
+                                    <option value="Plumbing">Plumbing</option>
+                                    <option value="General">General Hardware</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="prod-unit">Unit *</label>
+                                <input type="text" id="prod-unit" class="glass-input" required placeholder="e.g. Bag, Ton, 1k Pcs, Brass, Pcs">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="prod-buy-price">Purchase Price (₹) *</label>
+                                <input type="number" id="prod-buy-price" class="glass-input" required step="0.01" min="0" placeholder="0.00">
+                            </div>
+                            <div class="form-group">
+                                <label for="prod-sell-price">Selling Price (₹) *</label>
+                                <input type="number" id="prod-sell-price" class="glass-input" required step="0.01" min="0" placeholder="0.00">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="prod-stock">Current Stock *</label>
+                                <input type="number" id="prod-stock" class="glass-input" required step="0.01" min="0" placeholder="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="prod-min-stock">Min Stock Alarm *</label>
+                                <input type="number" id="prod-min-stock" class="glass-input" required step="0.01" min="0" placeholder="10">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="prod-gst">GST Rate (%)</label>
+                            <select id="prod-gst" class="glass-input">
+                                <option value="0">0% (GST Exempt)</option>
+                                <option value="5">5% (Bricks, Aggregates)</option>
+                                <option value="12">12% (Pipes, General)</option>
+                                <option value="18">18% (Steel, Paints, Plumbing)</option>
+                                <option value="28">28% (Cement)</option>
+                            </select>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-secondary" id="btn-cancel-product-modal">Cancel</button>
+                            <button type="submit" class="btn-primary" id="btn-save-product">Save Product</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 2. CUSTOMER MODAL (Add / Edit) -->
+            <div id="modal-customer" class="modal-overlay hidden">
+                <div class="modal-content glass-panel animated-modal small-modal">
+                    <div class="modal-header">
+                        <h2 id="customer-modal-title">Add New Customer Profile</h2>
+                        <button class="modal-close" id="btn-close-customer-modal"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <form id="customer-form" class="modal-form">
+                        <input type="hidden" id="customer-id">
+                        <div class="form-group">
+                            <label for="cust-name">Builder / Client Name *</label>
+                            <input type="text" id="cust-name" class="glass-input" required placeholder="e.g. Ramesh Gawande">
+                        </div>
+                        <div class="form-group">
+                            <label for="cust-phone">Mobile Number</label>
+                            <input type="tel" id="cust-phone" class="glass-input" placeholder="e.g. +91 98234 xxxxx">
+                        </div>
+                        <div class="form-group">
+                            <label for="cust-limit">Credit (Khata) Limit (₹)</label>
+                            <input type="number" id="cust-limit" class="glass-input" value="100000" min="0" placeholder="100000">
+                        </div>
+                        <div class="form-group">
+                            <label for="cust-address">Vill. / Address</label>
+                            <input type="text" id="cust-address" class="glass-input" placeholder="e.g. Ward No. 4, Umred">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-secondary" id="btn-cancel-customer-modal">Cancel</button>
+                            <button type="submit" class="btn-primary" id="btn-save-customer">Save Customer</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 3. SUPPLIER MODAL (Add / Edit - NEW) -->
+            <div id="modal-supplier" class="modal-overlay hidden">
+                <div class="modal-content glass-panel animated-modal small-modal">
+                    <div class="modal-header">
+                        <h2 id="supplier-modal-title">Add Wholesale Supplier Profile</h2>
+                        <button class="modal-close" id="btn-close-supplier-modal"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <form id="supplier-form" class="modal-form">
+                        <input type="hidden" id="supplier-id">
+                        <div class="form-group">
+                            <label for="sup-name">Supplier / Wholesaler Name *</label>
+                            <input type="text" id="sup-name" class="glass-input" required placeholder="e.g. Nagpur Cement Distributors">
+                        </div>
+                        <div class="form-group">
+                            <label for="sup-phone">Contact Number</label>
+                            <input type="tel" id="sup-phone" class="glass-input" placeholder="e.g. +91 98222 xxxxx">
+                        </div>
+                        <div class="form-group">
+                            <label for="sup-gstin">Supplier GSTIN</label>
+                            <input type="text" id="sup-gstin" class="glass-input" placeholder="e.g. 27AAAAA1111A1Z1">
+                        </div>
+                        <div class="form-group">
+                            <label for="sup-address">Supplier Address</label>
+                            <input type="text" id="sup-address" class="glass-input" placeholder="e.g. MIDC Industrial Area, Nagpur">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-secondary" id="btn-cancel-supplier-modal">Cancel</button>
+                            <button type="submit" class="btn-primary" id="btn-save-supplier" style="background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);">Save Supplier</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 4. UPI QR PAYMENT DIALOG MODAL -->
+            <div id="modal-upi-qr" class="modal-overlay hidden">
+                <div class="modal-content glass-panel animated-modal qr-modal">
+                    <div class="modal-header">
+                        <h2>Scan UPI QR Code</h2>
+                        <button class="modal-close" id="btn-close-qr-modal"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div class="qr-body">
+                        <p class="qr-prompt">Ask customer to scan to pay exact billing amount:</p>
+                        <h1 class="qr-amount" id="qr-total-amount">₹0.00</h1>
+                        <div class="qr-code-wrapper">
+                            <img id="upi-qr-image" src="" alt="Scan to pay via GPay/PhonePe">
+                            <div class="qr-logo-overlay"><i class="fa-solid fa-trowel-bricks"></i></div>
+                        </div>
+                        <div class="upi-merchant-details">
+                            <p>Paying To: <strong id="qr-merchant-name">Zade Traders</strong></p>
+                            <p>UPI ID: <span id="qr-merchant-id">zadetraders@okaxis</span></p>
+                        </div>
+                        <div class="qr-actions">
+                            <button class="btn-primary" id="btn-confirm-upi-paid"><i class="fa-solid fa-circle-check"></i> Payment Successful (Accept Bill)</button>
+                            <button class="btn-secondary" id="btn-cancel-upi-paid">Cancel Bill</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. CUSTOMER INVOICE RECEIPT MODAL ( थर्मल/A4 प्रिंट ) -->
+            <div id="modal-invoice-receipt" class="modal-overlay hidden">
+                <div class="modal-content glass-panel animated-modal invoice-modal-content">
+                    <div class="modal-header no-print">
+                        <h2>Invoice Processed Successfully</h2>
+                        <div class="header-buttons">
+                            <button class="btn-primary" id="btn-print-invoice"><i class="fa-solid fa-print"></i> Print Invoice (thermal/A4)</button>
+                            <button class="modal-close" id="btn-close-invoice-modal"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="invoice-container" id="printable-invoice">
+                        <!-- Invoice Header -->
+                        <div class="invoice-header-print">
+                            <h1 id="inv-shop-name">ZADE TRADERS</h1>
+                            <p id="inv-shop-address">MIDC Road, Near Main Chowk, Umred - 441203</p>
+                            <p id="inv-shop-phone">Phone: +91 94228 12345</p>
+                            <p id="inv-shop-gstin">GSTIN: 27GHIJK5678L1Z9</p>
+                            <h2 class="receipt-title">TAX INVOICE</h2>
+                        </div>
+
+                        <hr class="invoice-divider">
+
+                        <!-- Invoice Details -->
+                        <div class="invoice-meta-grid">
+                            <div>
+                                <p><strong>Invoice No:</strong> <span id="inv-no">ZT-2026-0005</span></p>
+                                <p><strong>Date & Time:</strong> <span id="inv-date">01/06/2026 18:45</span></p>
+                            </div>
+                            <div class="text-right">
+                                <p><strong>Customer:</strong> <span id="inv-customer-name">Cash Customer</span></p>
+                                <p><strong>Payment Mode:</strong> <span id="inv-payment-method">Cash</span></p>
+                            </div>
+                        </div>
+
+                        <!-- Invoice Items Table -->
+                        <table class="invoice-table">
+                            <thead>
+                                <tr>
+                                    <th>Material details</th>
+                                    <th class="text-center">GST %</th>
+                                    <th class="text-right">Rate</th>
+                                    <th class="text-center">Qty</th>
+                                    <th class="text-right">Total (Inc. GST)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoice-items-body">
+                                <!-- Dynamically loaded -->
+                            </tbody>
+                        </table>
+
+                        <hr class="invoice-divider">
+
+                        <!-- Invoice Calculations -->
+                        <div class="invoice-summary-grid">
+                            <div class="invoice-summary-col">
+                                <table class="gst-breakdown-table" id="inv-gst-breakdown">
+                                    <thead>
+                                        <tr>
+                                            <th>GST Rate</th>
+                                            <th>Taxable Val</th>
+                                            <th>CGST</th>
+                                            <th>SGST</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="inv-gst-breakdown-body">
+                                        <!-- Computed dynamic breakdown -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="invoice-summary-col text-right grand-totals-col">
+                                <div class="summary-line">
+                                    <span>Subtotal (Excl. Tax):</span>
+                                    <span id="inv-subtotal">₹0.00</span>
+                                </div>
+                                <div class="summary-line">
+                                    <span>GST Amount:</span>
+                                    <span id="inv-gst">₹0.00</span>
+                                </div>
+                                <div class="summary-line">
+                                    <span>Discount Applied:</span>
+                                    <span id="inv-discount">₹0.00</span>
+                                </div>
+                                <div class="summary-line grand-total">
+                                    <span>NET AMOUNT DUE:</span>
+                                    <strong id="inv-total">₹0.00</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="invoice-divider">
+
+                        <!-- Invoice Footer -->
+                        <div class="invoice-footer-print">
+                            <p>Thank you for your construction business!</p>
+                            <p>Terms: Goods once sold will not be taken back. Subject to Umred Jurisdiction.</p>
+                            <p class="invoice-stamp">For ZADE TRADERS<br><br><br>Authorized Signatory</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. PURCHASE BILL RECEIPT MODAL (NEW) -->
+            <div id="modal-purchase-receipt" class="modal-overlay hidden">
+                <div class="modal-content glass-panel animated-modal invoice-modal-content">
+                    <div class="modal-header no-print">
+                        <h2>Wholesale Purchase Shipment Recorded</h2>
+                        <div class="header-buttons">
+                            <button class="btn-primary" id="btn-print-purchase-bill"><i class="fa-solid fa-print"></i> Print Purchase Entry</button>
+                            <button class="modal-close" id="btn-close-purchase-bill-modal"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="invoice-container" id="printable-purchase-bill">
+                        <div class="invoice-header-print">
+                            <h1>ZADE TRADERS</h1>
+                            <p>MIDC Road, Near Main Chowk, Umred - 441203</p>
+                            <h2 class="receipt-title" style="color: var(--hint-purple);">INCOMING MATERIAL PURCHASE VOUCHER</h2>
+                        </div>
+
+                        <hr class="invoice-divider">
+
+                        <div class="invoice-meta-grid">
+                            <div>
+                                <p><strong>Purchase Voucher:</strong> <span id="pur-no">ZT-PUR-0001</span></p>
+                                <p><strong>Entry Date:</strong> <span id="pur-date">01/06/2026</span></p>
+                            </div>
+                            <div class="text-right">
+                                <p><strong>Supplier:</strong> <span id="pur-supplier-name">Nagpur Cement Distributors</span></p>
+                                <p><strong>Payment Account:</strong> <span id="pur-payment-method">Credit</span></p>
+                            </div>
+                        </div>
+
+                        <table class="invoice-table">
+                            <thead>
+                                <tr>
+                                    <th>Material details</th>
+                                    <th class="text-center">GST %</th>
+                                    <th class="text-right">Wholesale Rate</th>
+                                    <th class="text-center">Qty Received</th>
+                                    <th class="text-right">Total Cost</th>
+                                </tr>
+                            </thead>
+                            <tbody id="purchase-items-body">
+                                <!-- Loaded dynamically -->
+                            </tbody>
+                        </table>
+
+                        <hr class="invoice-divider">
+
+                        <div class="invoice-summary-grid">
+                            <div class="invoice-summary-col">
+                                <p style="font-size:0.75rem; color:#555;">This entry increments product inventory levels in the database. Debt is logged to Supplier credit account if purchased on Credit ledger.</p>
+                            </div>
+                            <div class="invoice-summary-col text-right grand-totals-col">
+                                <div class="summary-line">
+                                    <span>Material Cost:</span>
+                                    <span id="pur-subtotal">₹0.00</span>
+                                </div>
+                                <div class="summary-line">
+                                    <span>GST Tax:</span>
+                                    <span id="pur-gst">₹0.00</span>
+                                </div>
+                                <div class="summary-line grand-total" style="border-top-color: var(--hint-purple);">
+                                    <span>NET VALUE RECEIVED:</span>
+                                    <strong id="pur-total" style="color: var(--hint-purple);">₹0.00</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="invoice-divider">
+
+                        <div class="invoice-footer-print">
+                            <p class="invoice-stamp">For ZADE TRADERS<br><br><br>Received by Store Manager</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. CUSTOMER LEDGER PAYMENT RECEIPT MODAL -->
+            <div id="modal-payment-receipt" class="modal-overlay hidden">
+                <div class="modal-content glass-panel animated-modal invoice-modal-content">
+                    <div class="modal-header no-print">
+                        <h2>Payment Receipt Recorded</h2>
+                        <div class="header-buttons">
+                            <button class="btn-primary" id="btn-print-payment-receipt"><i class="fa-solid fa-print"></i> Print Receipt</button>
+                            <button class="modal-close" id="btn-close-payment-receipt-modal"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="invoice-container" id="printable-payment-receipt">
+                        <div class="invoice-header-print">
+                            <h1>ZADE TRADERS</h1>
+                            <p>MIDC Road, Near Main Chowk, Umred - 441203 | GSTIN: 27GHIJK5678L1Z9</p>
+                            <h2 class="receipt-title">KHATA PAYMENT RECEIPT</h2>
+                        </div>
+
+                        <hr class="invoice-divider">
+
+                        <div class="invoice-meta-grid receipt-meta">
+                            <div>
+                                <p><strong>Receipt No:</strong> <span id="rep-id">REC-0001</span></p>
+                                <p><strong>Date & Time:</strong> <span id="rep-date">01/06/2026 18:45</span></p>
+                            </div>
+                            <div class="text-right">
+                                <p><strong>Customer Builder:</strong> <span id="rep-customer-name">Ramesh Gawande</span></p>
+                                <p><strong>Outstanding Balance:</strong> <strong id="rep-old-balance" class="text-orange">₹12,500.00</strong></p>
+                            </div>
+                        </div>
+
+                        <hr class="invoice-divider">
+
+                        <div class="receipt-body">
+                            <p class="receipt-statement">
+                                Received with thanks, a sum of 
+                                <strong class="receipt-amount-display" id="rep-amount">₹5,000.00</strong> 
+                                in the form of <strong id="rep-method">Cash</strong> as repayment towards the outstanding Khata credit ledger.
+                            </p>
+                            <p class="receipt-remarks-display"><strong>Remarks:</strong> <span id="rep-remarks">Partial repayment, cash given in shop</span></p>
+                        </div>
+
+                        <hr class="invoice-divider">
+
+                        <div class="invoice-summary-grid">
+                            <div class="invoice-summary-col">
+                                <div class="summary-line">
+                                    <span>Original Balance Owed:</span>
+                                    <span id="rep-summary-original">₹12,500.00</span>
+                                </div>
+                                <div class="summary-line">
+                                    <span>Amount Paid Now:</span>
+                                    <span>- <span id="rep-summary-paid">₹5,000.00</span></span>
+                                </div>
+                                <div class="summary-line grand-total">
+                                    <span>New Balance Outstanding:</span>
+                                    <strong id="rep-summary-new" class="text-green">₹7,500.00</strong>
+                                </div>
+                            </div>
+                            <div class="invoice-summary-col text-right">
+                                <br><br>
+                                <p class="invoice-stamp">For ZADE TRADERS<br><br><br>Authorized Receiver</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 8. SUPPLIER LEDGER PAYMENT VOUCHER MODAL (NEW) -->
+            <div id="modal-supplier-payment-receipt" class="modal-overlay hidden">
+                <div class="modal-content glass-panel animated-modal invoice-modal-content">
+                    <div class="modal-header no-print">
+                        <h2>Supplier Repayment Voucher Created</h2>
+                        <div class="header-buttons">
+                            <button class="btn-primary" id="btn-print-supplier-payment"><i class="fa-solid fa-print"></i> Print Repayment Voucher</button>
+                            <button class="modal-close" id="btn-close-supplier-payment-modal"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="invoice-container" id="printable-supplier-payment">
+                        <div class="invoice-header-print">
+                            <h1>ZADE TRADERS</h1>
+                            <p>MIDC Road, Near Main Chowk, Umred - 441203</p>
+                            <h2 class="receipt-title" style="color: var(--hint-purple);">SUPPLIER PAYMENT DEBIT VOUCHER</h2>
+                        </div>
+
+                        <hr class="invoice-divider">
+
+                        <div class="invoice-meta-grid receipt-meta">
+                            <div>
+                                <p><strong>Voucher No:</strong> <span id="srep-id">SREC-0001</span></p>
+                                <p><strong>Payment Date:</strong> <span id="srep-date">01/06/2026</span></p>
+                            </div>
+                            <div class="text-right">
+                                <p><strong>Paid To Supplier:</strong> <span id="srep-supplier-name">Nagpur Cement Distributors</span></p>
+                                <p><strong>Debt Balance Owed:</strong> <strong id="srep-old-balance" class="text-purple">₹45,000.00</strong></p>
+                            </div>
+                        </div>
+
+                        <hr class="invoice-divider">
+
+                        <div class="receipt-body" style="background:#faf5ff; border-color:#e9d5ff;">
+                            <p class="receipt-statement" style="color:#6b21a8">
+                                Paid to supplier, a sum of 
+                                <strong class="receipt-amount-display" id="srep-amount" style="color:#6b21a8">₹10,000.00</strong> 
+                                in the form of <strong id="srep-method">Bank Transfer</strong> as repayment against our outstanding wholesale credit account.
+                            </p>
+                            <p class="receipt-remarks-display"><strong>Remarks:</strong> <span id="srep-remarks">Partial bank repayment</span></p>
+                        </div>
+
+                        <hr class="invoice-divider">
+
+                        <div class="invoice-summary-grid">
+                            <div class="invoice-summary-col">
+                                <div class="summary-line">
+                                    <span>Original Wholesale Debt:</span>
+                                    <span id="srep-summary-original">₹45,000.00</span>
+                                </div>
+                                <div class="summary-line">
+                                    <span>Amount Repaid Now:</span>
+                                    <span>- <span id="srep-summary-paid">₹10,000.00</span></span>
+                                </div>
+                                <div class="summary-line grand-total" style="border-top-color: var(--hint-purple);">
+                                    <span>Remaining Outstanding Debt:</span>
+                                    <strong id="srep-summary-new" class="text-purple">₹35,000.00</strong>
+                                </div>
+                            </div>
+                            <div class="invoice-summary-col text-right">
+                                <br><br>
+                                <p class="invoice-stamp">For ZADE TRADERS<br><br><br>Authorized Cashier / Payer</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+    <!-- SPA Logic script -->
+    <script src="app.js"></script>
+</body>
+</html>

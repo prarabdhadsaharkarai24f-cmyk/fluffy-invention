@@ -1,0 +1,21 @@
+{
+  "name": "zade-traders-pos",
+  "version": "1.0.0",
+  "description": "Premium POS and Inventory Automation System for Zade Traders, Umred",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  },
+  "keywords": [
+    "pos",
+    "automation",
+    "inventory",
+    "credit-ledger"
+  ],
+  "author": "Antigravity AI",
+  "license": "ISC"
+}
