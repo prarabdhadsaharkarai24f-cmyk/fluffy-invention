@@ -135,15 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await fetch(`${API_URL}/api/products`);
       products = await res.json();
-    } catch (e) {
-      showToast("Error fetching products inventory.", "error");
-    }
-  };
-
-  const fetchProducts = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/products`);
-      products = await res.json();
       renderCatalog();
       renderInventoryTable();
     } catch (e) {
