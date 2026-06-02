@@ -1939,6 +1939,50 @@ body {
   text-decoration: underline;
 }
 
+/* Card Header Action Icons (Edit / Delete) */
+.customer-card {
+  position: relative;
+}
+
+.card-header-actions {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  display: flex;
+  gap: 8px;
+}
+
+.btn-icon-action {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 4px;
+  border-radius: 4px;
+  transition: var(--transition-smooth);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon-action.edit {
+  color: var(--accent-primary);
+}
+
+.btn-icon-action.edit:hover {
+  color: #fff;
+  text-shadow: 0 0 8px rgba(0, 242, 254, 0.6);
+}
+
+.btn-icon-action.delete {
+  color: var(--hint-red);
+}
+
+.btn-icon-action.delete:hover {
+  color: #fff;
+  text-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+}
+
 /* ==========================================================================
    CSS PRINT OPTIMIZATION RULES
    ========================================================================== */

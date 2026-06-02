@@ -135,10 +135,21 @@ class JSONDatabase {
       fs.mkdirSync(DB_DIR, { recursive: true });
     }
 
-    // Overwrite database to guarantee building materials schema shifts instantly!
-    fs.writeFileSync(DB_FILE, JSON.stringify(DEFAULT_DB, null, 2), 'utf8');
-    this.data = JSON.parse(JSON.stringify(DEFAULT_DB));
-    console.log("Database initialized with Building Materials seed data.");
+    if (fs.existsSync(DB_FILE)) {
+      try {
+        const fileContent = fs.readFileSync(DB_FILE, 'utf8');
+        this.data = JSON.parse(fileContent);
+        console.log("Database loaded from existing db.json file.");
+      } catch (err) {
+        console.error("Failed to read database file, initializing default seed db:", err);
+        fs.writeFileSync(DB_FILE, JSON.stringify(DEFAULT_DB, null, 2), 'utf8');
+        this.data = JSON.parse(JSON.stringify(DEFAULT_DB));
+      }
+    } else {
+      fs.writeFileSync(DB_FILE, JSON.stringify(DEFAULT_DB, null, 2), 'utf8');
+      this.data = JSON.parse(JSON.stringify(DEFAULT_DB));
+      console.log("Database initialized with Building Materials seed data.");
+    }
   }
 
   // Saves memory state to db.json synchronously

@@ -112,6 +112,12 @@ app.put('/api/customers/:id', (req, res) => {
   res.json(updated);
 });
 
+app.delete('/api/customers/:id', (req, res) => {
+  const success = db.delete('customers', req.params.id);
+  if (!success) return res.status(404).json({ error: "Customer not found." });
+  res.json({ success: true, message: "Customer profile deleted successfully." });
+});
+
 app.post('/api/customers/:id/pay', (req, res) => {
   const id = parseInt(req.params.id);
   const { amount, paymentMethod, remarks } = req.body;

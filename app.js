@@ -148,6 +148,28 @@ document.addEventListener('DOMContentLoaded', () => {
       customers = await res.json();
       renderCustomersGrid();
       populateCustomerDropdown();
+
+      // Auto-refresh detail ledger view if open
+      if (activeLedgerCustomer) {
+        const updated = customers.find(c => c.id === activeLedgerCustomer.id);
+        if (updated) {
+          activeLedgerCustomer = updated;
+          document.getElementById('ledger-outstanding-val').textContent = `₹${updated.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+          document.getElementById('ledger-limit-val').textContent = `₹${updated.creditLimit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+          const usePercent = Math.min(100, Math.round((updated.balance / updated.creditLimit) * 100)) || 0;
+          const progress = document.getElementById('ledger-progress-bar');
+          if (progress) {
+            progress.className = "progress-bar";
+            if (usePercent >= 90) progress.classList.add('danger');
+            else if (usePercent >= 70) progress.classList.add('warning');
+            progress.style.width = `${usePercent}%`;
+          }
+          const usageText = document.getElementById('ledger-usage-percent');
+          if (usageText) usageText.textContent = `${usePercent}% Credit Used`;
+          
+          await renderLedgerTransactions(updated);
+        }
+      }
     } catch (e) {
       showToast("Error loading customers ledger list.", "error");
     }
@@ -159,6 +181,16 @@ document.addEventListener('DOMContentLoaded', () => {
       suppliers = await res.json();
       renderSuppliersGrid();
       loadPurchaseEntryPanel();
+
+      // Auto-refresh detail ledger view if open
+      if (activeLedgerSupplier) {
+        const updated = suppliers.find(s => s.id === activeLedgerSupplier.id);
+        if (updated) {
+          activeLedgerSupplier = updated;
+          document.getElementById('sup-ledger-outstanding-val').textContent = `₹${updated.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+          await renderSupplierLedgerTransactions(updated);
+        }
+      }
     } catch (e) {
       showToast("Error loading suppliers wholesalers.", "error");
     }
@@ -1354,6 +1386,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       return `
         <div class="customer-card glass-panel">
+          <div class="card-header-actions">
+            <button class="btn-icon-action edit" onclick="event.stopPropagation(); editCustomer(${c.id})" title="Edit Profile"><i class="fa-solid fa-pen-to-square"></i></button>
+            <button class="btn-icon-action delete" onclick="event.stopPropagation(); deleteCustomer(${c.id})" title="Delete Profile"><i class="fa-solid fa-trash-can"></i></button>
+          </div>
           <div class="customer-card-header">
             <div class="avatar-icon"><i class="fa-solid fa-user"></i></div>
             <div class="customer-details-card">
@@ -1591,6 +1627,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const handleCustomerSubmit = async (e) => {
     e.preventDefault();
 
+    const id = document.getElementById('customer-id').value;
     const payload = {
       name: document.getElementById('cust-name').value,
       phone: document.getElementById('cust-phone').value,
@@ -1599,27 +1636,68 @@ document.addEventListener('DOMContentLoaded', () => {
       gstin: document.getElementById('cust-gstin').value
     };
 
+    const isEdit = !!id;
+    const url = isEdit ? `${API_URL}/api/customers/${id}` : `${API_URL}/api/customers`;
+    const method = isEdit ? 'PUT' : 'POST';
+
     try {
-      const res = await fetch(`${API_URL}/api/customers`, {
-        method: 'POST',
+      const res = await fetch(url, {
+        method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
 
       if (res.ok) {
-        showToast("Builder profile registered.", "success");
+        showToast(isEdit ? "Builder profile updated." : "Builder profile registered.", "success");
         document.getElementById('modal-customer').classList.add('hidden');
         document.getElementById('customer-form').reset();
+        document.getElementById('customer-id').value = "";
         document.getElementById('cust-gstin').value = "";
         
         await fetchCustomers();
-        renderCustomersGrid();
-        populateCustomerDropdown();
       } else {
-        showToast("Failed to add new customer", "error");
+        const errData = await res.json();
+        showToast(errData.error || (isEdit ? "Failed to update customer" : "Failed to add new customer"), "error");
       }
     } catch (err) {
-      showToast("Server API error during registration", "error");
+      showToast("Server API error during operation", "error");
+    }
+  };
+
+  window.editCustomer = (id) => {
+    const cust = customers.find(c => c.id === id);
+    if (!cust) return;
+
+    document.getElementById('customer-id').value = cust.id;
+    document.getElementById('cust-name').value = cust.name;
+    document.getElementById('cust-phone').value = cust.phone || '';
+    document.getElementById('cust-limit').value = cust.creditLimit || 0;
+    document.getElementById('cust-address').value = cust.address || '';
+    document.getElementById('cust-gstin').value = cust.gstin || '';
+
+    document.getElementById('customer-modal-title').textContent = "Edit Customer Profile";
+    document.getElementById('modal-customer').classList.remove('hidden');
+  };
+
+  window.deleteCustomer = async (id) => {
+    const cust = customers.find(c => c.id === id);
+    if (!cust) return;
+
+    if (confirm(`Are you sure you want to delete customer "${cust.name}"?\n(This profile will be deleted, but transaction history remains for auditing)`)) {
+      try {
+        const res = await fetch(`${API_URL}/api/customers/${id}`, {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast("Customer profile deleted successfully", "success");
+          await fetchCustomers();
+        } else {
+          showToast(data.error || "Failed to delete customer", "error");
+        }
+      } catch (err) {
+        showToast("Server connection error during deletion", "error");
+      }
     }
   };
 
@@ -1640,6 +1718,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     grid.innerHTML = filtered.map(s => `
       <div class="customer-card glass-panel" style="border-left: 4px solid var(--hint-purple);">
+        <div class="card-header-actions">
+          <button class="btn-icon-action edit" onclick="event.stopPropagation(); editSupplier(${s.id})" title="Edit Supplier"><i class="fa-solid fa-pen-to-square" style="color: var(--hint-purple);"></i></button>
+          <button class="btn-icon-action delete" onclick="event.stopPropagation(); deleteSupplier(${s.id})" title="Delete Supplier"><i class="fa-solid fa-trash-can"></i></button>
+        </div>
         <div class="customer-card-header">
           <div class="avatar-icon" style="color:var(--hint-purple)"><i class="fa-solid fa-truck-field"></i></div>
           <div class="customer-details-card">
@@ -1861,6 +1943,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const handleSupplierSubmit = async (e) => {
     e.preventDefault();
 
+    const id = document.getElementById('supplier-id').value;
     const payload = {
       name: document.getElementById('sup-name').value,
       phone: document.getElementById('sup-phone').value,
@@ -1868,26 +1951,66 @@ document.addEventListener('DOMContentLoaded', () => {
       address: document.getElementById('sup-address').value
     };
 
+    const isEdit = !!id;
+    const url = isEdit ? `${API_URL}/api/suppliers/${id}` : `${API_URL}/api/suppliers`;
+    const method = isEdit ? 'PUT' : 'POST';
+
     try {
-      const res = await fetch(`${API_URL}/api/suppliers`, {
-        method: 'POST',
+      const res = await fetch(url, {
+        method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
 
       if (res.ok) {
-        showToast("Wholesale supplier registered.", "success");
+        showToast(isEdit ? "Wholesale supplier updated." : "Wholesale supplier registered.", "success");
         document.getElementById('modal-supplier').classList.add('hidden');
         document.getElementById('supplier-form').reset();
+        document.getElementById('supplier-id').value = "";
         
         await fetchSuppliers();
-        renderSuppliersGrid();
-        loadPurchaseEntryPanel(); // Refresh supplier selection dropdowns
       } else {
-        showToast("Failed to add supplier.", "error");
+        const errData = await res.json();
+        showToast(errData.error || (isEdit ? "Failed to update supplier." : "Failed to add supplier."), "error");
       }
     } catch (err) {
-      showToast("Server API error during supplier registration.", "error");
+      showToast("Server API error during operation.", "error");
+    }
+  };
+
+  window.editSupplier = (id) => {
+    const sup = suppliers.find(s => s.id === id);
+    if (!sup) return;
+
+    document.getElementById('supplier-id').value = sup.id;
+    document.getElementById('sup-name').value = sup.name;
+    document.getElementById('sup-phone').value = sup.phone || '';
+    document.getElementById('sup-gstin').value = sup.gstin || '';
+    document.getElementById('sup-address').value = sup.address || '';
+
+    document.getElementById('supplier-modal-title').textContent = "Edit Wholesaler Profile";
+    document.getElementById('modal-supplier').classList.remove('hidden');
+  };
+
+  window.deleteSupplier = async (id) => {
+    const sup = suppliers.find(s => s.id === id);
+    if (!sup) return;
+
+    if (confirm(`Are you sure you want to delete supplier "${sup.name}"?\n(This profile will be deleted, but transaction history remains for auditing)`)) {
+      try {
+        const res = await fetch(`${API_URL}/api/suppliers/${id}`, {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast("Supplier profile deleted successfully", "success");
+          await fetchSuppliers();
+        } else {
+          showToast(data.error || "Failed to delete supplier", "error");
+        }
+      } catch (err) {
+        showToast("Server connection error during deletion", "error");
+      }
     }
   };
 
