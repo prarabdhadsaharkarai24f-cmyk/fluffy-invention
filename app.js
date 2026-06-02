@@ -140,10 +140,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/products`);
+      products = await res.json();
+      renderCatalog();
+      renderInventoryTable();
+    } catch (e) {
+      showToast("Error fetching products inventory.", "error");
+    }
+  };
+
   const fetchCustomers = async () => {
     try {
       const res = await fetch(`${API_URL}/api/customers`);
       customers = await res.json();
+      renderCustomersGrid();
+      populateCustomerDropdown();
     } catch (e) {
       showToast("Error loading customers ledger list.", "error");
     }
@@ -153,6 +166,8 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await fetch(`${API_URL}/api/suppliers`);
       suppliers = await res.json();
+      renderSuppliersGrid();
+      loadPurchaseEntryPanel();
     } catch (e) {
       showToast("Error loading suppliers wholesalers.", "error");
     }
@@ -406,6 +421,13 @@ document.addEventListener('DOMContentLoaded', () => {
         addToCart(product);
       });
     });
+  };
+
+  window.switchTab = (targetId) => {
+    const navItem = document.querySelector(`.nav-item[data-target="${targetId}"]`);
+    if (navItem) {
+      navItem.click();
+    }
   };
 
   const addToCart = (product) => {
@@ -1424,12 +1446,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const txs = [];
       custSales.forEach(s => {
+        const isCredit = s.paymentMethod === 'Khata';
+        const itemsSummary = s.items ? s.items.map(item => `${item.name} x ${item.qty} ${item.unit}`).join(', ') : '';
         txs.push({
           date: s.date,
-          type: 'Invoice Bill',
+          type: isCredit ? 'Invoice Bill' : `Retail (${s.paymentMethod})`,
           ref: s.invoiceNo,
           debit: s.total,
-          credit: 0,
+          credit: isCredit ? 0 : s.total, // Balance cash sales instantly in statement
+          remarks: itemsSummary,
           rawItem: s
         });
       });
@@ -1459,17 +1484,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const dateStr = new Date(t.date).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' });
         
         let actionBtn = '';
-        if (t.type === 'Invoice Bill') {
+        const isSale = t.type === 'Invoice Bill' || t.type.startsWith('Retail');
+        if (isSale) {
           actionBtn = `<button class="btn-table edit" title="Reprint Bill" onclick="window.reprintCustomerBillByNo('${t.ref}')"><i class="fa-solid fa-print"></i></button>`;
         } else {
           actionBtn = `<button class="btn-table ledger" title="Reprint Receipt" onclick="window.reprintCustomerReceiptById(${t.rawItem.id}, ${runningBal + t.credit})"><i class="fa-solid fa-print"></i></button>`;
         }
 
+        const typeClass = t.type === 'Invoice Bill' ? 'alert' : (t.type.startsWith('Retail') ? 'status-tag active' : 'active');
+        const badgeColorStyle = t.type.startsWith('Retail') ? 'background: rgba(14, 165, 233, 0.1); color: var(--accent-primary);' : '';
+
         return `
           <tr>
             <td>${dateStr}</td>
-            <td><span class="status-tag ${t.type === 'Invoice Bill' ? 'alert' : 'active'}" style="font-size:0.7rem; padding: 2px 6px;">${t.type}</span></td>
-            <td><strong>${t.ref}</strong> ${t.remarks ? '<span style="font-size:0.75rem; color:var(--text-muted); display:block;">(' + t.remarks + ')</span>' : ''}</td>
+            <td><span class="status-tag ${typeClass}" style="font-size:0.7rem; padding: 2px 6px; ${badgeColorStyle}">${t.type}</span></td>
+            <td>
+              <strong>${t.ref}</strong>
+              ${t.remarks ? '<span style="font-size:0.75rem; color:var(--text-muted); display:block; white-space:normal; max-width: 320px;">(' + t.remarks + ')</span>' : ''}
+            </td>
             <td class="text-right text-red">${t.debit > 0 ? '₹' + t.debit.toLocaleString('en-IN') : '-'}</td>
             <td class="text-right text-green">${t.credit > 0 ? '₹' + t.credit.toLocaleString('en-IN') : '-'}</td>
             <td class="text-right" style="font-weight:700;">₹${runningBal.toLocaleString('en-IN')}</td>
@@ -1477,7 +1509,6 @@ document.addEventListener('DOMContentLoaded', () => {
           </tr>
         `;
       });
-
       body.innerHTML = rows.join('');
     } catch (e) {
       body.innerHTML = `<tr><td colspan="7" class="empty-state text-red">Failed to query ledger transactions.</td></tr>`;
@@ -1682,12 +1713,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const txs = [];
       supPurchases.forEach(p => {
+        const isCredit = p.paymentMethod === 'Credit';
+        const itemsSummary = p.items ? p.items.map(item => `${item.name} x ${item.qty} ${item.unit}`).join(', ') : '';
+        const supplierRef = p.supplierInvoiceNo ? `Supplier Inv: ${p.supplierInvoiceNo}` : '';
+        const desc = [supplierRef, itemsSummary].filter(Boolean).join(' | ');
+
         txs.push({
           date: p.date,
-          type: 'Stock Purchase',
+          type: isCredit ? 'Stock Purchase' : `Purchase (${p.paymentMethod})`,
           ref: p.purchaseNo,
-          debit: 0,
-          credit: p.total, // Wholesale purchase increases what we owe
+          debit: isCredit ? 0 : p.total, // Balance cash wholesale orders instantly in statement
+          credit: p.total,
+          remarks: desc,
           rawItem: p
         });
       });
@@ -1697,7 +1734,7 @@ document.addEventListener('DOMContentLoaded', () => {
           date: p.date,
           type: 'Payment Made',
           ref: `SREC-${String(p.id).padStart(4, '0')}`,
-          debit: p.amount, // Payments decrease what we owe
+          debit: p.amount,
           credit: 0,
           remarks: p.remarks,
           rawItem: p
@@ -1712,29 +1749,37 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       let runningBal = 0;
-      body.innerHTML = txs.map(t => {
+      const rows = txs.map(t => {
         runningBal += (t.credit - t.debit);
         const dateStr = new Date(t.date).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' });
         
         let actionBtn = '';
-        if (t.type === 'Stock Purchase') {
+        const isPurchase = t.type === 'Stock Purchase' || t.type.startsWith('Purchase');
+        if (isPurchase) {
           actionBtn = `<button class="btn-table edit" title="Reprint Purchase Bill" onclick="window.reprintSupplierPurchaseByNo('${t.ref}')"><i class="fa-solid fa-print"></i></button>`;
         } else {
           actionBtn = `<button class="btn-table ledger" title="Reprint Voucher" onclick="window.reprintSupplierPaymentById(${t.rawItem.id}, ${runningBal + t.debit})"><i class="fa-solid fa-print"></i></button>`;
         }
 
+        const typeClass = t.type === 'Stock Purchase' ? 'alert' : (t.type.startsWith('Purchase') ? 'status-tag active' : 'active');
+        const badgeColorStyle = t.type.startsWith('Purchase') ? 'background: rgba(167, 139, 250, 0.1); color: var(--hint-purple);' : '';
+
         return `
           <tr>
             <td>${dateStr}</td>
-            <td><span class="status-tag ${t.type === 'Stock Purchase' ? 'alert' : 'active'}" style="font-size:0.7rem; padding: 2px 6px;">${t.type}</span></td>
-            <td><strong>${t.ref}</strong> ${t.remarks ? '<span style="font-size:0.75rem; color:var(--text-muted); display:block;">(' + t.remarks + ')</span>' : ''}</td>
+            <td><span class="status-tag ${typeClass}" style="font-size:0.7rem; padding: 2px 6px; ${badgeColorStyle}">${t.type}</span></td>
+            <td>
+              <strong>${t.ref}</strong>
+              ${t.remarks ? '<span style="font-size:0.75rem; color:var(--text-muted); display:block; white-space:normal; max-width: 320px;">(' + t.remarks + ')</span>' : ''}
+            </td>
             <td class="text-right text-green">${t.debit > 0 ? '₹' + t.debit.toLocaleString('en-IN') : '-'}</td>
             <td class="text-right text-red">${t.credit > 0 ? '₹' + t.credit.toLocaleString('en-IN') : '-'}</td>
             <td class="text-right" style="font-weight:700;">₹${runningBal.toLocaleString('en-IN')}</td>
             <td class="text-center">${actionBtn}</td>
           </tr>
         `;
-      }).join('');
+      });
+      body.innerHTML = rows.join('');
     } catch (e) {
       body.innerHTML = `<tr><td colspan="7" class="empty-state text-red">Failed to query ledger transactions.</td></tr>`;
     }

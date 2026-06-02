@@ -74,7 +74,7 @@
             <!-- ========================================================= -->
             <div id="panel-dashboard" class="workspace-panel active">
                 <div class="kpi-grid dashboard-materials-kpis">
-                    <div class="kpi-card glass-panel glow-teal">
+                    <div class="kpi-card glass-panel glow-teal" onclick="window.switchTab('panel-pos')" style="cursor: pointer;">
                         <div class="kpi-icon"><i class="fa-solid fa-indian-rupee-sign"></i></div>
                         <div class="kpi-details">
                             <span class="kpi-title">Today's Sales</span>
@@ -82,7 +82,7 @@
                             <p class="kpi-desc">Customer cash flow</p>
                         </div>
                     </div>
-                    <div class="kpi-card glass-panel glow-emerald">
+                    <div class="kpi-card glass-panel glow-emerald" onclick="window.switchTab('panel-pos')" style="cursor: pointer;">
                         <div class="kpi-icon"><i class="fa-solid fa-chart-line"></i></div>
                         <div class="kpi-details">
                             <span class="kpi-title">Total Sales Revenue</span>
@@ -90,7 +90,7 @@
                             <p class="kpi-desc">Aggregated retail sales</p>
                         </div>
                     </div>
-                    <div class="kpi-card glass-panel glow-orange">
+                    <div class="kpi-card glass-panel glow-orange" onclick="window.switchTab('panel-khata')" style="cursor: pointer;">
                         <div class="kpi-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div>
                         <div class="kpi-details">
                             <span class="kpi-title">Customer Receivables</span>
@@ -98,7 +98,7 @@
                             <p class="kpi-desc">Outstanding Khata credit</p>
                         </div>
                     </div>
-                    <div class="kpi-card glass-panel glow-purple">
+                    <div class="kpi-card glass-panel glow-purple" onclick="window.switchTab('panel-supplier-khata')" style="cursor: pointer;">
                         <div class="kpi-icon"><i class="fa-solid fa-truck-arrow-right"></i></div>
                         <div class="kpi-details">
                             <span class="kpi-title">Supplier Payables</span>
@@ -106,7 +106,7 @@
                             <p class="kpi-desc">Wholesale debts we owe</p>
                         </div>
                     </div>
-                    <div class="kpi-card glass-panel glow-red" id="kpi-low-stock-card">
+                    <div class="kpi-card glass-panel glow-red" id="kpi-low-stock-card" onclick="window.switchTab('panel-inventory')" style="cursor: pointer;">
                         <div class="kpi-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
                         <div class="kpi-details">
                             <span class="kpi-title">Low Stock Alerts</span>
