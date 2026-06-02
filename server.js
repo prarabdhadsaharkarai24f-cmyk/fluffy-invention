@@ -82,7 +82,7 @@ app.get('/api/customers', (req, res) => {
 });
 
 app.post('/api/customers', (req, res) => {
-  const { name, phone, address, creditLimit } = req.body;
+  const { name, phone, address, creditLimit, gstin } = req.body;
   if (!name) return res.status(400).json({ error: "Customer name is required." });
 
   const newCustomer = db.insert('customers', {
@@ -90,7 +90,8 @@ app.post('/api/customers', (req, res) => {
     phone: phone || "",
     address: address || "",
     creditLimit: parseFloat(creditLimit) || 10000,
-    balance: 0
+    balance: 0,
+    gstin: gstin || ""
   });
   res.status(201).json(newCustomer);
 });
@@ -105,6 +106,7 @@ app.put('/api/customers/:id', (req, res) => {
   if (req.body.phone !== undefined) updatedFields.phone = req.body.phone;
   if (req.body.address !== undefined) updatedFields.address = req.body.address;
   if (req.body.creditLimit !== undefined) updatedFields.creditLimit = parseFloat(req.body.creditLimit) || 0;
+  if (req.body.gstin !== undefined) updatedFields.gstin = req.body.gstin;
 
   const updated = db.update('customers', id, updatedFields);
   res.json(updated);
@@ -230,7 +232,7 @@ app.get('/api/purchases', (req, res) => {
 });
 
 app.post('/api/purchases', (req, res) => {
-  const { supplierId, supplierName, items, subtotal, discount, gstTotal, total, paymentMethod } = req.body;
+  const { supplierId, supplierName, items, subtotal, discount, gstTotal, total, paymentMethod, billType, supplierInvoiceNo } = req.body;
 
   if (!items || items.length === 0) {
     return res.status(400).json({ error: "Cannot process purchase shipment with empty bill." });
@@ -272,6 +274,7 @@ app.post('/api/purchases', (req, res) => {
 
   const purchaseRecord = db.insert('purchases', {
     purchaseNo,
+    supplierInvoiceNo: supplierInvoiceNo || "",
     date: new Date().toISOString(),
     supplierId: supplierId || 0,
     supplierName: supplierName || "Cash Purchases / Local Supplier",
@@ -281,7 +284,8 @@ app.post('/api/purchases', (req, res) => {
     gstTotal: parseFloat(gstTotal) || 0,
     total: parseFloat(total) || 0,
     paymentMethod,
-    paymentStatus
+    paymentStatus,
+    billType: billType || "GST"
   });
 
   res.status(201).json(purchaseRecord);
@@ -295,7 +299,7 @@ app.get('/api/sales', (req, res) => {
 });
 
 app.post('/api/sales', (req, res) => {
-  const { customerId, customerName, items, subtotal, discount, gstTotal, total, paymentMethod } = req.body;
+  const { customerId, customerName, items, subtotal, discount, gstTotal, total, paymentMethod, billType } = req.body;
 
   if (!items || items.length === 0) {
     return res.status(400).json({ error: "Cannot process sale with empty cart." });
@@ -351,7 +355,8 @@ app.post('/api/sales', (req, res) => {
     gstTotal: parseFloat(gstTotal) || 0,
     total: parseFloat(total) || 0,
     paymentMethod,
-    paymentStatus
+    paymentStatus,
+    billType: billType || "GST"
   });
 
   res.status(201).json(saleRecord);

@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const icon = tx.paymentMethod === 'Cash' ? 'fa-money-bill-1' : (tx.paymentMethod === 'UPI' ? 'fa-qrcode' : 'fa-book');
       const dateStr = new Date(tx.date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) + ' ' + new Date(tx.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
       return `
-        <div class="transaction-item">
+        <div class="transaction-item" onclick="window.reprintCustomerBillByNo('${tx.invoiceNo}')">
           <div class="tx-left">
             <div class="tx-badge ${iconClass}"><i class="fa-solid ${icon}"></i></div>
             <div class="tx-info">
@@ -238,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const icon = "fa-truck-moving";
       const dateStr = new Date(pur.date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) + ' ' + new Date(pur.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
       return `
-        <div class="transaction-item">
+        <div class="transaction-item" onclick="window.reprintSupplierPurchaseByNo('${pur.purchaseNo}')">
           <div class="tx-left">
             <div class="tx-badge ${iconClass}"><i class="fa-solid ${icon}"></i></div>
             <div class="tx-info">
@@ -448,19 +448,23 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    const billTypeOpt = document.querySelector('input[name="cart-bill-type"]:checked');
+    const billType = billTypeOpt ? billTypeOpt.value : "GST";
+
     list.innerHTML = cart.map(item => {
       const itemTotal = item.qty * item.price;
+      const rate = billType === "Non-GST" ? 0 : item.gstRate;
       return `
         <div class="cart-item">
           <div class="cart-item-details">
             <span class="cart-item-name">${item.name}</span>
-            <span class="cart-item-gst">${item.qty} ${item.unit} x ₹${item.price} (GST ${item.gstRate}%)</span>
+            <span class="cart-item-gst">${item.qty} ${item.unit} x ₹${item.price} (GST ${rate}%)</span>
             <span class="cart-item-price">₹${itemTotal.toLocaleString('en-IN')}</span>
           </div>
           <div class="cart-item-controls">
             <div class="qty-counter">
               <button class="qty-btn btn-qty-minus" data-id="${item.productId}"><i class="fa-solid fa-minus"></i></button>
-              <span class="qty-val">${item.qty}</span>
+              <input type="number" class="qty-input-box qty-val" data-id="${item.productId}" value="${item.qty}" min="0.01" step="any">
               <button class="qty-btn btn-qty-plus" data-id="${item.productId}"><i class="fa-solid fa-plus"></i></button>
             </div>
             <button class="btn-text" style="color: var(--hint-red); font-size: 0.75rem;" onclick="removeFromCart(${item.productId})"><i class="fa-solid fa-trash"></i> Remove</button>
@@ -480,6 +484,18 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         adjustQty(parseInt(btn.getAttribute('data-id')), 1);
+      });
+    });
+
+    list.querySelectorAll('.qty-input-box').forEach(input => {
+      input.addEventListener('change', (e) => {
+        const productId = parseInt(input.getAttribute('data-id'));
+        const newQty = parseFloat(input.value);
+        if (isNaN(newQty) || newQty <= 0) {
+          removeFromCart(productId);
+        } else {
+          updateCartItemQty(productId, newQty);
+        }
       });
     });
 
@@ -504,6 +520,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  const updateCartItemQty = (productId, newQty) => {
+    const item = cart.find(i => i.productId === productId);
+    const prod = products.find(p => p.id === productId);
+
+    if (item && prod) {
+      if (newQty > prod.stock) {
+        showToast(`Stock limit reached! Available stock is ${prod.stock} ${prod.unit}.`, "warning");
+        updateCartUI();
+        return;
+      }
+      item.qty = newQty;
+      updateCartUI();
+    }
+  };
+
   window.removeFromCart = (productId) => {
     cart = cart.filter(i => i.productId !== productId);
     updateCartUI();
@@ -514,9 +545,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let totalGstAmount = 0;
     let netTotalInclGst = 0;
 
+    const billTypeOpt = document.querySelector('input[name="cart-bill-type"]:checked');
+    const billType = billTypeOpt ? billTypeOpt.value : "GST";
+
     cart.forEach(item => {
       const itemTotalInclGst = item.qty * item.price;
-      const taxableVal = itemTotalInclGst / (1 + (item.gstRate / 100));
+      const rate = billType === "Non-GST" ? 0 : item.gstRate;
+      const taxableVal = itemTotalInclGst / (1 + (rate / 100));
       const itemGst = itemTotalInclGst - taxableVal;
 
       subtotalExclGst += taxableVal;
@@ -577,13 +612,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
     const discount = parseFloat(document.getElementById('cart-discount').value) || 0;
 
+    const billTypeOpt = document.querySelector('input[name="cart-bill-type"]:checked');
+    const billType = billTypeOpt ? billTypeOpt.value : "GST";
+
     let subtotalExclGst = 0;
     let totalGstAmount = 0;
     let netTotalInclGst = 0;
     
     const checkoutItems = cart.map(item => {
       const itemTotalInclGst = item.qty * item.price;
-      const taxableVal = itemTotalInclGst / (1 + (item.gstRate / 100));
+      const rate = billType === "Non-GST" ? 0 : item.gstRate;
+      const taxableVal = itemTotalInclGst / (1 + (rate / 100));
       const gstAmt = itemTotalInclGst - taxableVal;
 
       subtotalExclGst += taxableVal;
@@ -596,7 +635,7 @@ document.addEventListener('DOMContentLoaded', () => {
         price: item.price,
         qty: item.qty,
         unit: item.unit,
-        gstRate: item.gstRate,
+        gstRate: rate,
         gstAmount: parseFloat(gstAmt.toFixed(2)),
         total: itemTotalInclGst
       };
@@ -623,7 +662,8 @@ document.addEventListener('DOMContentLoaded', () => {
       discount,
       gstTotal: parseFloat(totalGstAmount.toFixed(2)),
       total: grandTotal,
-      paymentMethod
+      paymentMethod,
+      billType
     };
 
     if (paymentMethod === 'UPI') {
@@ -703,13 +743,42 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('inv-date').textContent = new Date(invoice.date).toLocaleString('en-IN');
     document.getElementById('inv-customer-name').textContent = invoice.customerName;
     document.getElementById('inv-payment-method').textContent = invoice.paymentMethod;
+
+    // Look up customer phone, address, and GSTIN from customers list
+    const customer = customers.find(c => c.id === invoice.customerId);
+    if (customer && invoice.customerId > 0) {
+      document.getElementById('inv-customer-phone').textContent = customer.phone || 'N/A';
+      document.getElementById('inv-customer-address').textContent = customer.address || 'N/A';
+      document.getElementById('inv-customer-gstin').textContent = customer.gstin || 'N/A';
+      document.getElementById('inv-customer-phone-row').style.display = 'block';
+      document.getElementById('inv-customer-address-row').style.display = 'block';
+      document.getElementById('inv-customer-gstin-row').style.display = 'block';
+    } else {
+      document.getElementById('inv-customer-phone-row').style.display = 'none';
+      document.getElementById('inv-customer-address-row').style.display = 'none';
+      document.getElementById('inv-customer-gstin-row').style.display = 'none';
+    }
+
+    const receiptTitle = modal.querySelector('.receipt-title');
+    if (invoice.billType === "Non-GST") {
+      receiptTitle.textContent = "ESTIMATE BILL";
+      document.getElementById('inv-shop-gstin').style.display = 'none';
+      document.getElementById('inv-gst-breakdown').style.display = 'none';
+      document.getElementById('inv-gst').closest('.summary-line').style.display = 'none';
+    } else {
+      receiptTitle.textContent = "TAX INVOICE";
+      document.getElementById('inv-shop-gstin').style.display = 'block';
+      document.getElementById('inv-gst-breakdown').style.display = 'table';
+      document.getElementById('inv-gst').closest('.summary-line').style.display = 'flex';
+    }
     
     const tableBody = document.getElementById('invoice-items-body');
     tableBody.innerHTML = invoice.items.map(item => {
+      const rate = invoice.billType === "Non-GST" ? 0 : item.gstRate;
       return `
         <tr>
           <td>${item.name}</td>
-          <td class="text-center">${item.gstRate}%</td>
+          <td class="text-center">${rate}%</td>
           <td class="text-right">₹${item.price.toFixed(2)}</td>
           <td class="text-center">${item.qty} ${item.unit}</td>
           <td class="text-right">₹${item.total.toFixed(2)}</td>
@@ -725,7 +794,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const breakdownBody = document.getElementById('inv-gst-breakdown-body');
     const gstGroups = {};
     invoice.items.forEach(item => {
-      const rate = item.gstRate;
+      const rate = invoice.billType === "Non-GST" ? 0 : item.gstRate;
       if (!gstGroups[rate]) {
         gstGroups[rate] = { taxable: 0, gst: 0 };
       }
@@ -993,27 +1062,81 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    const billTypeOpt = document.querySelector('input[name="purchase-bill-type"]:checked');
+    const billType = billTypeOpt ? billTypeOpt.value : "GST";
+
     list.innerHTML = purchaseCart.map((item, idx) => {
       // wholesale purchase items calculations are exclusive of GST
       const costExclGst = item.qty * item.price;
-      const gstAmount = costExclGst * (item.gstRate / 100);
+      const rate = billType === "Non-GST" ? 0 : item.gstRate;
+      const gstAmount = costExclGst * (rate / 100);
       const totalCost = costExclGst + gstAmount;
 
       return `
         <div class="cart-item" style="border-color: rgba(167, 139, 250, 0.2)">
           <div class="cart-item-details">
             <span class="cart-item-name">${item.name}</span>
-            <span class="cart-item-gst">${item.qty} ${item.unit} x ₹${item.price} (GST +${item.gstRate}%)</span>
+            <span class="cart-item-gst">Rate: ₹${item.price} (GST +${rate}%)</span>
             <span class="cart-item-price" style="color:var(--hint-purple)">₹${totalCost.toLocaleString('en-IN')}</span>
           </div>
           <div class="cart-item-controls">
+            <div class="qty-counter" style="border-color: rgba(167, 139, 250, 0.3)">
+              <button class="qty-btn btn-purchase-qty-minus" data-index="${idx}"><i class="fa-solid fa-minus"></i></button>
+              <input type="number" class="purchase-qty-input-box qty-val" data-index="${idx}" value="${item.qty}" min="0.01" step="any">
+              <button class="qty-btn btn-purchase-qty-plus" data-index="${idx}"><i class="fa-solid fa-plus"></i></button>
+            </div>
             <button class="btn-text" style="color: var(--hint-red); font-size: 0.75rem;" onclick="removePurchaseItem(${idx})"><i class="fa-solid fa-trash"></i> Remove</button>
           </div>
         </div>
       `;
     }).join('');
 
+    list.querySelectorAll('.btn-purchase-qty-minus').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        adjustPurchaseQty(parseInt(btn.getAttribute('data-index')), -1);
+      });
+    });
+
+    list.querySelectorAll('.btn-purchase-qty-plus').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        adjustPurchaseQty(parseInt(btn.getAttribute('data-index')), 1);
+      });
+    });
+
+    list.querySelectorAll('.purchase-qty-input-box').forEach(input => {
+      input.addEventListener('change', (e) => {
+        const index = parseInt(input.getAttribute('data-index'));
+        const newQty = parseFloat(input.value);
+        if (isNaN(newQty) || newQty <= 0) {
+          removePurchaseItem(index);
+        } else {
+          updatePurchaseItemQty(index, newQty);
+        }
+      });
+    });
+
     calculatePurchaseCartTotals();
+  };
+
+  const adjustPurchaseQty = (index, change) => {
+    if (purchaseCart[index]) {
+      const newQty = purchaseCart[index].qty + change;
+      if (newQty <= 0) {
+        removePurchaseItem(index);
+      } else {
+        purchaseCart[index].qty = newQty;
+        updatePurchaseCartUI();
+      }
+    }
+  };
+
+  const updatePurchaseItemQty = (index, newQty) => {
+    if (purchaseCart[index]) {
+      purchaseCart[index].qty = newQty;
+      updatePurchaseCartUI();
+    }
   };
 
   window.removePurchaseItem = (index) => {
@@ -1026,9 +1149,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let totalGstAmount = 0;
     let netTotalInclGst = 0;
 
+    const billTypeOpt = document.querySelector('input[name="purchase-bill-type"]:checked');
+    const billType = billTypeOpt ? billTypeOpt.value : "GST";
+
     purchaseCart.forEach(item => {
       const costExclGst = item.qty * item.price;
-      const gstAmount = costExclGst * (item.gstRate / 100);
+      const rate = billType === "Non-GST" ? 0 : item.gstRate;
+      const gstAmount = costExclGst * (rate / 100);
       const totalCost = costExclGst + gstAmount;
 
       subtotalExclGst += costExclGst;
@@ -1052,13 +1179,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectedSupplier = supplierId > 0 ? suppliers.find(s => s.id === supplierId) : null;
     const paymentMethod = document.querySelector('input[name="purchase-payment-method"]:checked').value;
 
+    const billTypeOpt = document.querySelector('input[name="purchase-bill-type"]:checked');
+    const billType = billTypeOpt ? billTypeOpt.value : "GST";
+    const supplierInvoiceNo = document.getElementById('purchase-supplier-invoice-no').value;
+
     let subtotalExclGst = 0;
     let totalGstAmount = 0;
     let netTotalInclGst = 0;
 
     const purchaseItems = purchaseCart.map(item => {
       const costExclGst = item.qty * item.price;
-      const gstAmount = costExclGst * (item.gstRate / 100);
+      const rate = billType === "Non-GST" ? 0 : item.gstRate;
+      const gstAmount = costExclGst * (rate / 100);
       const totalCost = costExclGst + gstAmount;
 
       subtotalExclGst += costExclGst;
@@ -1071,7 +1203,7 @@ document.addEventListener('DOMContentLoaded', () => {
         price: item.price,
         qty: item.qty,
         unit: item.unit,
-        gstRate: item.gstRate,
+        gstRate: rate,
         gstAmount: parseFloat(gstAmount.toFixed(2)),
         total: totalCost
       };
@@ -1090,7 +1222,9 @@ document.addEventListener('DOMContentLoaded', () => {
       discount: 0,
       gstTotal: parseFloat(totalGstAmount.toFixed(2)),
       total: netTotalInclGst,
-      paymentMethod
+      paymentMethod,
+      billType,
+      supplierInvoiceNo
     };
 
     try {
@@ -1105,6 +1239,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast(`Stock purchase shipment ${data.purchaseNo} successfully recorded.`, "success");
         purchaseCart = [];
         updatePurchaseCartUI();
+        document.getElementById('purchase-supplier-invoice-no').value = "";
         
         await fetchProducts();
         await fetchSuppliers();
@@ -1127,16 +1262,54 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('pur-supplier-name').textContent = pur.supplierName;
     document.getElementById('pur-payment-method').textContent = pur.paymentMethod === 'Credit' ? 'Supplier Credit Ledger' : 'Cash / Bank Paid';
 
+    // Show actual Supplier Bill No
+    if (pur.supplierInvoiceNo) {
+      document.getElementById('pur-supplier-invoice-no-val').textContent = pur.supplierInvoiceNo;
+      document.getElementById('pur-supplier-invoice-row').style.display = 'block';
+    } else {
+      document.getElementById('pur-supplier-invoice-row').style.display = 'none';
+    }
+
+    // Look up supplier details from suppliers list
+    const supplier = suppliers.find(s => s.id === pur.supplierId);
+    if (supplier && pur.supplierId > 0) {
+      document.getElementById('pur-supplier-phone').textContent = supplier.phone || 'N/A';
+      document.getElementById('pur-supplier-address').textContent = supplier.address || 'N/A';
+      document.getElementById('pur-supplier-gstin').textContent = supplier.gstin || 'N/A';
+      document.getElementById('pur-supplier-phone-row').style.display = 'block';
+      document.getElementById('pur-supplier-address-row').style.display = 'block';
+      document.getElementById('pur-supplier-gstin-row').style.display = 'block';
+    } else {
+      document.getElementById('pur-supplier-phone-row').style.display = 'none';
+      document.getElementById('pur-supplier-address-row').style.display = 'none';
+      document.getElementById('pur-supplier-gstin-row').style.display = 'none';
+    }
+
+    // Handle GST vs Non-GST display
+    const receiptTitle = document.getElementById('pur-receipt-title');
+    if (pur.billType === "Non-GST") {
+      receiptTitle.textContent = "INCOMING MATERIAL PURCHASE VOUCHER (Non-GST)";
+      document.getElementById('pur-shop-gstin').style.display = 'none';
+      document.getElementById('pur-gst').closest('.summary-line').style.display = 'none';
+    } else {
+      receiptTitle.textContent = "INCOMING MATERIAL PURCHASE VOUCHER (GST)";
+      document.getElementById('pur-shop-gstin').style.display = 'block';
+      document.getElementById('pur-gst').closest('.summary-line').style.display = 'flex';
+    }
+
     const body = document.getElementById('purchase-items-body');
-    body.innerHTML = pur.items.map(item => `
-      <tr>
-        <td>${item.name}</td>
-        <td class="text-center">${item.gstRate}%</td>
-        <td class="text-right">₹${item.price.toFixed(2)}</td>
-        <td class="text-center">${item.qty} ${item.unit}</td>
-        <td class="text-right">₹${item.total.toFixed(2)}</td>
-      </tr>
-    `).join('');
+    body.innerHTML = pur.items.map(item => {
+      const rate = pur.billType === "Non-GST" ? 0 : item.gstRate;
+      return `
+        <tr>
+          <td>${item.name}</td>
+          <td class="text-center">${rate}%</td>
+          <td class="text-right">₹${item.price.toFixed(2)}</td>
+          <td class="text-center">${item.qty} ${item.unit}</td>
+          <td class="text-right">₹${item.total.toFixed(2)}</td>
+        </tr>
+      `;
+    }).join('');
 
     document.getElementById('pur-subtotal').textContent = `₹${pur.subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
     document.getElementById('pur-gst').textContent = `₹${pur.gstTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
@@ -1384,7 +1557,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const updatedCust = customers.find(c => c.id === activeLedgerCustomer.id);
         await viewCustomerLedger(updatedCust.id);
 
-        reprintPaymentReceipt(data.payment, updatedCust.balance + data.payment.amount);
+        window.reprintCustomerReceiptById(data.payment.id, updatedCust.balance + data.payment.amount);
       } else {
         showToast(data.error || "Payment recording failed.", "error");
       }
@@ -1400,7 +1573,8 @@ document.addEventListener('DOMContentLoaded', () => {
       name: document.getElementById('cust-name').value,
       phone: document.getElementById('cust-phone').value,
       creditLimit: parseFloat(document.getElementById('cust-limit').value),
-      address: document.getElementById('cust-address').value
+      address: document.getElementById('cust-address').value,
+      gstin: document.getElementById('cust-gstin').value
     };
 
     try {
@@ -1414,6 +1588,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast("Builder profile registered.", "success");
         document.getElementById('modal-customer').classList.add('hidden');
         document.getElementById('customer-form').reset();
+        document.getElementById('cust-gstin').value = "";
         
         await fetchCustomers();
         renderCustomersGrid();
@@ -1638,7 +1813,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const updatedSup = suppliers.find(s => s.id === activeLedgerSupplier.id);
         await viewSupplierLedger(updatedSup.id);
 
-        reprintSupplierPaymentReceipt(data.payment, updatedSup.balance + data.payment.amount);
+        window.reprintSupplierPaymentById(data.payment.id, updatedSup.balance + data.payment.amount);
       } else {
         showToast(data.error || "Failed to submit supplier payment.", "error");
       }
@@ -1808,6 +1983,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('cart-discount').addEventListener('input', calculateCartTotals);
     document.getElementById('btn-checkout').addEventListener('click', triggerCheckout);
+    document.querySelectorAll('input[name="cart-bill-type"]').forEach(radio => {
+      radio.addEventListener('change', calculateCartTotals);
+    });
 
     // Product search retail
     document.getElementById('catalog-search').addEventListener('input', renderCatalog);
@@ -1829,6 +2007,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('cust-phone').value = "";
       document.getElementById('cust-limit').value = "100000";
       document.getElementById('cust-address').value = "";
+      document.getElementById('cust-gstin').value = "";
       document.getElementById('modal-customer').classList.remove('hidden');
     });
 
@@ -1866,6 +2045,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
     document.getElementById('btn-purchase-checkout').addEventListener('click', triggerPurchaseCheckout);
+    document.querySelectorAll('input[name="purchase-bill-type"]').forEach(radio => {
+      radio.addEventListener('change', calculatePurchaseCartTotals);
+    });
 
     // Customer Khata search
     document.getElementById('khata-search').addEventListener('input', renderCustomersGrid);
