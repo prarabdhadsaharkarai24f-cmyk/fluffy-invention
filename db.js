@@ -141,12 +141,25 @@ class JSONDatabase {
     console.log("Database initialized with Building Materials seed data.");
   }
 
+  // Saves memory state to db.json synchronously
   save() {
     try {
       fs.writeFileSync(DB_FILE, JSON.stringify(this.data, null, 2), 'utf8');
       return true;
     } catch (err) {
       console.error("Failed to write to database file:", err);
+      return false;
+    }
+  }
+
+  // Overwrite database to factory default seeds
+  reset() {
+    try {
+      fs.writeFileSync(DB_FILE, JSON.stringify(DEFAULT_DB, null, 2), 'utf8');
+      this.data = JSON.parse(JSON.stringify(DEFAULT_DB));
+      return true;
+    } catch (err) {
+      console.error("Failed to reset database:", err);
       return false;
     }
   }

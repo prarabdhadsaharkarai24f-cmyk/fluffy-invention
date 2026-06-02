@@ -437,6 +437,31 @@ app.get('/api/dashboard', (req, res) => {
   });
 });
 
+// ==========================================
+// 9. System Administrative Actions (NEW)
+// ==========================================
+app.post('/api/system/reset', (req, res) => {
+  const success = db.reset();
+  if (!success) return res.status(500).json({ error: "Failed to reset database on disk." });
+  res.json({ success: true, message: "Database reset to factory defaults successfully." });
+});
+
+app.get('/api/system/backup', (req, res) => {
+  res.json(db.data);
+});
+
+app.post('/api/system/restore', (req, res) => {
+  const backup = req.body;
+  if (!backup || !backup.products || !backup.customers || !backup.suppliers || !backup.sales) {
+    return res.status(400).json({ error: "Invalid backup file structure." });
+  }
+  
+  db.data = backup;
+  const success = db.save();
+  if (!success) return res.status(500).json({ error: "Failed to write backup to disk." });
+  res.json({ success: true, message: "Database backup restored successfully." });
+});
+
 app.listen(PORT, () => {
   console.log(`====================================================`);
   console.log(`  Zade Traders POS Server is running locally!`);

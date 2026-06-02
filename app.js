@@ -1287,9 +1287,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let actionBtn = '';
         if (t.type === 'Invoice Bill') {
-          actionBtn = `<button class="btn-table edit" title="Reprint Bill" onclick='reprintLedgerBill(${JSON.stringify(t.rawItem)})'><i class="fa-solid fa-print"></i></button>`;
+          actionBtn = `<button class="btn-table edit" title="Reprint Bill" onclick="window.reprintCustomerBillByNo('${t.ref}')"><i class="fa-solid fa-print"></i></button>`;
         } else {
-          actionBtn = `<button class="btn-table ledger" title="Reprint Receipt" onclick='reprintPaymentReceipt(${JSON.stringify(t.rawItem)}, ${runningBal + t.credit})'><i class="fa-solid fa-print"></i></button>`;
+          actionBtn = `<button class="btn-table ledger" title="Reprint Receipt" onclick="window.reprintCustomerReceiptById(${t.rawItem.id}, ${runningBal + t.credit})"><i class="fa-solid fa-print"></i></button>`;
         }
 
         return `
@@ -1311,27 +1311,49 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  window.reprintLedgerBill = (invoice) => {
-    launchPrintableInvoice(invoice);
+  window.reprintCustomerBillByNo = async (invoiceNo) => {
+    try {
+      const res = await fetch(`${API_URL}/api/sales`);
+      const allSales = await res.json();
+      const invoice = allSales.find(s => s.invoiceNo === invoiceNo);
+      if (invoice) {
+        launchPrintableInvoice(invoice);
+      } else {
+        showToast("Invoice not found.", "error");
+      }
+    } catch (e) {
+      showToast("Error loading invoice reprint details.", "error");
+    }
   };
 
-  window.reprintPaymentReceipt = (payment, originalBalance) => {
-    const modal = document.getElementById('modal-payment-receipt');
-    
-    document.getElementById('rep-id').textContent = `REC-${String(payment.id).padStart(4, '0')}`;
-    document.getElementById('rep-date').textContent = new Date(payment.date).toLocaleString('en-IN');
-    document.getElementById('rep-customer-name').textContent = payment.customerName;
-    document.getElementById('rep-old-balance').textContent = `₹${originalBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
-    document.getElementById('rep-amount').textContent = `₹${payment.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
-    document.getElementById('rep-method').textContent = payment.paymentMethod;
-    document.getElementById('rep-remarks').textContent = payment.remarks || "N/A";
+  window.reprintCustomerReceiptById = async (paymentId, originalBalance) => {
+    try {
+      const res = await fetch(`${API_URL}/api/payments`);
+      const allPayments = await res.json();
+      const payment = allPayments.find(p => p.id === parseInt(paymentId));
+      if (payment) {
+        const modal = document.getElementById('modal-payment-receipt');
+        
+        document.getElementById('rep-id').textContent = `REC-${String(payment.id).padStart(4, '0')}`;
+        document.getElementById('rep-date').textContent = new Date(payment.date).toLocaleString('en-IN');
+        document.getElementById('rep-customer-name').textContent = payment.customerName;
+        document.getElementById('rep-old-balance').textContent = `₹${originalBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+        document.getElementById('rep-amount').textContent = `₹${payment.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+        document.getElementById('rep-method').textContent = payment.paymentMethod;
+        document.getElementById('rep-remarks').textContent = payment.remarks || "N/A";
 
-    const newOutstanding = Math.max(0, originalBalance - payment.amount);
-    document.getElementById('rep-summary-original').textContent = `₹${originalBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
-    document.getElementById('rep-summary-paid').textContent = `₹${payment.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
-    document.getElementById('rep-summary-new').textContent = `₹${newOutstanding.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+        const newOutstanding = Math.max(0, originalBalance - payment.amount);
+        document.getElementById('rep-summary-original').textContent = `₹${originalBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+        document.getElementById('rep-summary-paid').textContent = `₹${payment.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+        document.getElementById('rep-summary-new').textContent = `₹${newOutstanding.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
 
-    modal.classList.remove('hidden');
+        modal.classList.remove('hidden');
+      } else {
+        showToast("Payment receipt not found.", "error");
+      }
+    } catch (e) {
+      showToast("Error loading payment receipt.", "error");
+    }
   };
 
   const handleKhataPaymentSubmit = async (e) => {
@@ -1521,9 +1543,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let actionBtn = '';
         if (t.type === 'Stock Purchase') {
-          actionBtn = `<button class="btn-table edit" title="Reprint Purchase Bill" onclick='reprintWholesaleBill(${JSON.stringify(t.rawItem)})'><i class="fa-solid fa-print"></i></button>`;
+          actionBtn = `<button class="btn-table edit" title="Reprint Purchase Bill" onclick="window.reprintSupplierPurchaseByNo('${t.ref}')"><i class="fa-solid fa-print"></i></button>`;
         } else {
-          actionBtn = `<button class="btn-table ledger" title="Reprint Voucher" onclick='reprintSupplierPaymentReceipt(${JSON.stringify(t.rawItem)}, ${runningBal + t.debit})'><i class="fa-solid fa-print"></i></button>`;
+          actionBtn = `<button class="btn-table ledger" title="Reprint Voucher" onclick="window.reprintSupplierPaymentById(${t.rawItem.id}, ${runningBal + t.debit})"><i class="fa-solid fa-print"></i></button>`;
         }
 
         return `
@@ -1543,27 +1565,49 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  window.reprintWholesaleBill = (pur) => {
-    launchPrintablePurchaseBill(pur);
+  window.reprintSupplierPurchaseByNo = async (purchaseNo) => {
+    try {
+      const res = await fetch(`${API_URL}/api/purchases`);
+      const allPurchases = await res.json();
+      const pur = allPurchases.find(p => p.purchaseNo === purchaseNo);
+      if (pur) {
+        launchPrintablePurchaseBill(pur);
+      } else {
+        showToast("Purchase voucher not found.", "error");
+      }
+    } catch (e) {
+      showToast("Error loading purchase reprint details.", "error");
+    }
   };
 
-  window.reprintSupplierPaymentReceipt = (payment, originalBalance) => {
-    const modal = document.getElementById('modal-supplier-payment-receipt');
-    
-    document.getElementById('srep-id').textContent = `SREC-${String(payment.id).padStart(4, '0')}`;
-    document.getElementById('srep-date').textContent = new Date(payment.date).toLocaleDateString('en-IN');
-    document.getElementById('srep-supplier-name').textContent = payment.supplierName;
-    document.getElementById('srep-old-balance').textContent = `₹${originalBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
-    document.getElementById('srep-amount').textContent = `₹${payment.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
-    document.getElementById('srep-method').textContent = payment.paymentMethod;
-    document.getElementById('srep-remarks').textContent = payment.remarks || "N/A";
+  window.reprintSupplierPaymentById = async (paymentId, originalBalance) => {
+    try {
+      const res = await fetch(`${API_URL}/api/supplier_payments`);
+      const allPayments = await res.json();
+      const payment = allPayments.find(p => p.id === parseInt(paymentId));
+      if (payment) {
+        const modal = document.getElementById('modal-supplier-payment-receipt');
+        
+        document.getElementById('srep-id').textContent = `SREC-${String(payment.id).padStart(4, '0')}`;
+        document.getElementById('srep-date').textContent = new Date(payment.date).toLocaleDateString('en-IN');
+        document.getElementById('srep-supplier-name').textContent = payment.supplierName;
+        document.getElementById('srep-old-balance').textContent = `₹${originalBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+        document.getElementById('srep-amount').textContent = `₹${payment.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+        document.getElementById('srep-method').textContent = payment.paymentMethod;
+        document.getElementById('srep-remarks').textContent = payment.remarks || "N/A";
 
-    const newOutstanding = Math.max(0, originalBalance - payment.amount);
-    document.getElementById('srep-summary-original').textContent = `₹${originalBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
-    document.getElementById('srep-summary-paid').textContent = `₹${payment.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
-    document.getElementById('srep-summary-new').textContent = `₹${newOutstanding.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+        const newOutstanding = Math.max(0, originalBalance - payment.amount);
+        document.getElementById('srep-summary-original').textContent = `₹${originalBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+        document.getElementById('srep-summary-paid').textContent = `₹${payment.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+        document.getElementById('srep-summary-new').textContent = `₹${newOutstanding.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
 
-    modal.classList.remove('hidden');
+        modal.classList.remove('hidden');
+      } else {
+        showToast("Payment voucher not found.", "error");
+      }
+    } catch (e) {
+      showToast("Error loading repayment details.", "error");
+    }
   };
 
   const handleSupplierPaymentSubmit = async (e) => {
@@ -1688,24 +1732,64 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!confirm("⚠️ WARNING: This will reset the database back to its building supply seed data, wiping out custom transactions and customer ledger accounts! Proceed?")) return;
     
     showToast("Resetting POS system database...", "info");
-    triggerDatabaseBackup();
-    window.location.reload();
+    try {
+      const res = await fetch(`${API_URL}/api/system/reset`, { method: 'POST' });
+      if (res.ok) {
+        showToast("POS Database reset completed successfully.", "success");
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        showToast("Reset API failed.", "error");
+      }
+    } catch (e) {
+      showToast("Error connecting to database server.", "error");
+    }
   };
 
-  const triggerDatabaseBackup = () => {
-    const backupData = {
-      shopSettings: currentSettings,
-      products,
-      customers,
-      suppliers
+  const triggerDatabaseBackup = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/system/backup`);
+      const backupData = await res.json();
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+      const dlAnchorElem = document.createElement('a');
+      dlAnchorElem.setAttribute("href", dataStr);
+      dlAnchorElem.setAttribute("download", `ZT_POS_Backup_${new Date().toISOString().substring(0,10)}.json`);
+      dlAnchorElem.click();
+      showToast("Store Database JSON backup downloaded.", "success");
+    } catch (e) {
+      showToast("Failed to fetch database backup from server.", "error");
+    }
+  };
+
+  const triggerDatabaseRestore = () => {
+    document.getElementById('backup-file-input').click();
+  };
+
+  const handleBackupFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const backupData = JSON.parse(event.target.result);
+        const res = await fetch(`${API_URL}/api/system/restore`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(backupData)
+        });
+        
+        if (res.ok) {
+          showToast("Database backup successfully restored!", "success");
+          setTimeout(() => window.location.reload(), 1500);
+        } else {
+          const data = await res.json();
+          showToast(data.error || "Failed to restore backup.", "error");
+        }
+      } catch (err) {
+        showToast("Invalid JSON file uploaded.", "error");
+      }
     };
-    
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
-    const dlAnchorElem = document.createElement('a');
-    dlAnchorElem.setAttribute("href", dataStr);
-    dlAnchorElem.setAttribute("download", `ZT_POS_Backup_${new Date().toISOString().substring(0,10)}.json`);
-    dlAnchorElem.click();
-    showToast("Store Database JSON backup downloaded.", "success");
+    reader.readAsText(file);
   };
 
   // ==========================================
@@ -1820,6 +1904,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Global settings profiles
     document.getElementById('settings-shop-form').addEventListener('submit', handleSettingsSubmit);
     document.getElementById('btn-trigger-backup').addEventListener('click', triggerDatabaseBackup);
+    document.getElementById('btn-trigger-restore').addEventListener('click', triggerDatabaseRestore);
+    document.getElementById('backup-file-input').addEventListener('change', handleBackupFileSelect);
     document.getElementById('btn-trigger-reset').addEventListener('click', triggerFactoryReset);
 
     // Modals close buttons
