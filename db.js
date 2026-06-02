@@ -124,7 +124,7 @@ const DEFAULT_DB = {
     { id: 1, date: "2026-05-31T11:00:00.000Z", supplierId: 1, supplierName: "Nagpur Cement Distributors", amount: 10000, paymentMethod: "Bank Transfer", remarks: "Repayment against cement stock" }
   ],
   users: [
-    { id: 1, username: "admin", passwordHash: "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918" } // SHA-256 of "admin123"
+    { id: 1, username: "admin", passwordHash: "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9" } // SHA-256 of "admin123"
   ]
 };
 
@@ -149,6 +149,14 @@ class JSONDatabase {
           this.data.users = JSON.parse(JSON.stringify(DEFAULT_DB.users));
           this.save();
           console.log("Users schema migrated successfully.");
+        } else {
+          // If the admin hash is the old incorrect one, update it to the true admin123 hash
+          const adminUser = this.data.users.find(u => u.username === 'admin');
+          if (adminUser && adminUser.passwordHash === '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918') {
+            adminUser.passwordHash = '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9';
+            this.save();
+            console.log("Admin password hash migrated to admin123 successfully.");
+          }
         }
       } catch (err) {
         console.error("Failed to read database file, initializing default seed db:", err);
