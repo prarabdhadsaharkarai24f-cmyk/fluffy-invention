@@ -12,24 +12,32 @@ class SQLiteDatabase {
   }
 
   async init() {
-    if (!fs.existsSync(this.dbDir)) {
-      try {
+    try {
+      if (!fs.existsSync(this.dbDir)) {
         fs.mkdirSync(this.dbDir, { recursive: true });
-      } catch (err) {
-        console.error(`Failed to create directory ${this.dbDir}:`, err);
-        console.error("Falling back to relative local data directory.");
-        this.dbFile = path.join(__dirname, 'data', 'pos.db');
-        this.dbDir = path.dirname(this.dbFile);
+      }
+      this.db = await open({
+        filename: this.dbFile,
+        driver: sqlite3.Database
+      });
+    } catch (err) {
+      console.error(`Failed to initialize database at ${this.dbFile}:`, err.message);
+      console.warn("Falling back to relative local data directory.");
+      this.dbFile = path.join(__dirname, 'data', 'pos.db');
+      this.dbDir = path.dirname(this.dbFile);
+      try {
         if (!fs.existsSync(this.dbDir)) {
           fs.mkdirSync(this.dbDir, { recursive: true });
         }
+        this.db = await open({
+          filename: this.dbFile,
+          driver: sqlite3.Database
+        });
+      } catch (fallbackErr) {
+        console.error("Critical: Failed to initialize fallback database:", fallbackErr.message);
+        throw fallbackErr;
       }
     }
-
-    this.db = await open({
-      filename: this.dbFile,
-      driver: sqlite3.Database
-    });
 
     // Enable foreign keys
     await this.db.run('PRAGMA foreign_keys = ON');
