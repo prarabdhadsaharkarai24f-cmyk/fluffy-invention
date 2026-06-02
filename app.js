@@ -813,15 +813,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const confirmBtn = document.getElementById('btn-confirm-upi-paid');
     const cancelBtn = document.getElementById('btn-cancel-upi-paid');
 
+    const cleanupListeners = () => {
+      confirmBtn.removeEventListener('click', newConfirm);
+      cancelBtn.removeEventListener('click', newCancel);
+    };
+
     const newConfirm = async () => {
       upiModal.classList.add('hidden');
-      confirmBtn.removeEventListener('click', newConfirm);
+      cleanupListeners();
       await postInvoiceCheckout(payload);
     };
 
     const newCancel = () => {
       upiModal.classList.add('hidden');
-      cancelBtn.removeEventListener('click', newCancel);
+      cleanupListeners();
       showToast("UPI Checkout cancelled.", "info");
     };
 
@@ -1014,16 +1019,52 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     const id = document.getElementById('product-id').value;
     
+    const name = document.getElementById('prod-name').value.trim();
+    if (!name) {
+      showToast("Material name is required.", "warning");
+      return;
+    }
+
+    const sellPrice = parseFloat(document.getElementById('prod-sell-price').value);
+    if (isNaN(sellPrice) || sellPrice < 0) {
+      showToast("Selling price must be a valid non-negative number.", "warning");
+      return;
+    }
+
+    const buyPrice = parseFloat(document.getElementById('prod-buy-price').value) || 0;
+    if (buyPrice < 0) {
+      showToast("Buy price must be a non-negative number.", "warning");
+      return;
+    }
+
+    const stock = parseFloat(document.getElementById('prod-stock').value) || 0;
+    if (stock < 0) {
+      showToast("Stock must be a non-negative number.", "warning");
+      return;
+    }
+
+    const minStock = parseFloat(document.getElementById('prod-min-stock').value) || 0;
+    if (minStock < 0) {
+      showToast("Minimum stock must be a non-negative number.", "warning");
+      return;
+    }
+
+    const gstRate = parseInt(document.getElementById('prod-gst').value) || 0;
+    if (gstRate < 0) {
+      showToast("GST rate must be a non-negative integer.", "warning");
+      return;
+    }
+
     const payload = {
-      name: document.getElementById('prod-name').value,
+      name,
       barcode: document.getElementById('prod-barcode').value,
       category: document.getElementById('prod-category').value,
       unit: document.getElementById('prod-unit').value,
-      buyPrice: parseFloat(document.getElementById('prod-buy-price').value),
-      sellPrice: parseFloat(document.getElementById('prod-sell-price').value),
-      stock: parseFloat(document.getElementById('prod-stock').value),
-      minStock: parseFloat(document.getElementById('prod-min-stock').value),
-      gstRate: parseInt(document.getElementById('prod-gst').value)
+      buyPrice,
+      sellPrice,
+      stock,
+      minStock,
+      gstRate
     };
 
     const isEdit = id !== "";
@@ -1043,7 +1084,8 @@ document.addEventListener('DOMContentLoaded', () => {
         await fetchProducts();
         renderInventoryTable();
       } else {
-        showToast("Failed to save product details.", "error");
+        const errData = await res.json().catch(() => ({}));
+        showToast(errData.error || "Failed to save product details.", "error");
       }
     } catch (err) {
       showToast("Server error during product save.", "error");
@@ -1133,12 +1175,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const qty = parseFloat(document.getElementById('purchase-item-qty').value);
     const buyRate = parseFloat(document.getElementById('purchase-item-rate').value);
 
-    if (!productId || qty <= 0 || buyRate < 0) {
+    if (!productId || isNaN(qty) || qty <= 0 || isNaN(buyRate) || buyRate < 0) {
       showToast("Please enter valid wholesale parameters.", "warning");
       return;
     }
 
     const prod = products.find(p => p.id === productId);
+    if (!prod) {
+      showToast("Selected material not found.", "error");
+      return;
+    }
     
     // Add to Purchase Cart (B2B wholesale items calculations are exclusive of GST)
     const existing = purchaseCart.find(item => item.productId === productId);
@@ -1667,6 +1713,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!activeLedgerCustomer) return;
 
     const amount = parseFloat(document.getElementById('pay-amount').value);
+    if (isNaN(amount) || amount <= 0) {
+      showToast("Please enter a valid positive payment amount.", "warning");
+      return;
+    }
+
     const paymentMethod = document.getElementById('pay-method').value;
     const remarks = document.getElementById('pay-remarks').value;
 
@@ -1703,10 +1754,22 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
 
     const id = document.getElementById('customer-id').value;
+    const name = document.getElementById('cust-name').value.trim();
+    if (!name) {
+      showToast("Builder/Customer name is required.", "warning");
+      return;
+    }
+
+    const creditLimit = parseFloat(document.getElementById('cust-limit').value) || 0;
+    if (creditLimit < 0) {
+      showToast("Credit limit must be a non-negative number.", "warning");
+      return;
+    }
+
     const payload = {
-      name: document.getElementById('cust-name').value,
+      name,
       phone: document.getElementById('cust-phone').value,
-      creditLimit: parseFloat(document.getElementById('cust-limit').value),
+      creditLimit,
       address: document.getElementById('cust-address').value,
       gstin: document.getElementById('cust-gstin').value
     };
@@ -1731,7 +1794,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         await fetchCustomers();
       } else {
-        const errData = await res.json();
+        const errData = await res.json().catch(() => ({}));
         showToast(errData.error || (isEdit ? "Failed to update customer" : "Failed to add new customer"), "error");
       }
     } catch (err) {
@@ -1983,6 +2046,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!activeLedgerSupplier) return;
 
     const amount = parseFloat(document.getElementById('sup-pay-amount').value);
+    if (isNaN(amount) || amount <= 0) {
+      showToast("Please enter a valid positive payment amount.", "warning");
+      return;
+    }
+
     const paymentMethod = document.getElementById('sup-pay-method').value;
     const remarks = document.getElementById('sup-pay-remarks').value;
 
@@ -2191,11 +2259,13 @@ document.addEventListener('DOMContentLoaded', () => {
           showToast("Database backup successfully restored!", "success");
           setTimeout(() => window.location.reload(), 1500);
         } else {
-          const data = await res.json();
+          const data = await res.json().catch(() => ({}));
           showToast(data.error || "Failed to restore backup.", "error");
         }
       } catch (err) {
         showToast("Invalid JSON file uploaded.", "error");
+      } finally {
+        e.target.value = ""; // Reset the input value to allow consecutive uploads of the same file
       }
     };
     reader.readAsText(file);
