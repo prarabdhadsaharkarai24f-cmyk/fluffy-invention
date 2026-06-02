@@ -2048,10 +2048,30 @@ body {
   margin-top: 6px;
 }
 
-.btn-logout-action:hover {
-  background: rgba(239, 68, 68, 0.2) !important;
-  color: #fff !important;
-  box-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
+.logout-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  color: var(--hint-red);
+  text-decoration: none;
+  border-radius: 12px;
+  font-weight: 500;
+  transition: var(--transition-smooth);
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  font-size: 0.9rem;
+}
+
+.logout-link i {
+  font-size: 1.1rem;
+}
+
+.logout-link:hover {
+  color: #fff;
+  background: var(--hint-red);
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.35);
+  border-color: transparent;
 }
 
 /* ==========================================================================

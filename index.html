@@ -78,17 +78,18 @@
                 <a href="#" class="nav-item" data-target="panel-settings"><i class="fa-solid fa-sliders"></i> Settings</a>
             </nav>
 
-            <div class="user-profile" style="display: flex; flex-direction: column; gap: 8px;">
-                <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
-                    <div class="avatar-icon"><i class="fa-solid fa-user-tie"></i></div>
-                    <div class="user-info">
-                        <span class="user-name" id="operator-name">Admin Operator</span>
-                        <span class="home-status"><span class="dot green"></span> System Online</span>
-                    </div>
+            <div class="sidebar-footer-action" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color); margin-bottom: 12px;">
+                <a href="#" class="logout-link" id="btn-logout">
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout Session
+                </a>
+            </div>
+
+            <div class="user-profile">
+                <div class="avatar-icon"><i class="fa-solid fa-user-tie"></i></div>
+                <div class="user-info">
+                    <span class="user-name" id="operator-name">Admin Operator</span>
+                    <span class="home-status"><span class="dot green"></span> System Online</span>
                 </div>
-                <button class="nav-item btn-logout-action" id="btn-logout" style="width: 100%; border: none; background: rgba(239, 68, 68, 0.1); color: var(--hint-red); text-align: left; padding: 8px 12px; border-radius: 8px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: var(--transition-smooth); margin-top: 4px;">
-                    <i class="fa-solid fa-right-from-bracket"></i> Logout
-                </button>
             </div>
         </aside>
 
