@@ -122,6 +122,9 @@ const DEFAULT_DB = {
   ],
   supplier_payments: [
     { id: 1, date: "2026-05-31T11:00:00.000Z", supplierId: 1, supplierName: "Nagpur Cement Distributors", amount: 10000, paymentMethod: "Bank Transfer", remarks: "Repayment against cement stock" }
+  ],
+  users: [
+    { id: 1, username: "admin", passwordHash: "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918" } // SHA-256 of "admin123"
   ]
 };
 
@@ -140,6 +143,13 @@ class JSONDatabase {
         const fileContent = fs.readFileSync(DB_FILE, 'utf8');
         this.data = JSON.parse(fileContent);
         console.log("Database loaded from existing db.json file.");
+        
+        // Auto-migrate: seed users table if missing in older JSON db file
+        if (!this.data.users) {
+          this.data.users = JSON.parse(JSON.stringify(DEFAULT_DB.users));
+          this.save();
+          console.log("Users schema migrated successfully.");
+        }
       } catch (err) {
         console.error("Failed to read database file, initializing default seed db:", err);
         fs.writeFileSync(DB_FILE, JSON.stringify(DEFAULT_DB, null, 2), 'utf8');

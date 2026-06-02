@@ -15,6 +15,41 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- User Login Overlay Screen -->
+    <div id="login-overlay" class="login-overlay">
+        <div class="login-card glass-panel animated-modal">
+            <div class="login-header">
+                <div class="login-logo-icon">
+                    <i class="fa-solid fa-trowel-bricks"></i>
+                </div>
+                <h2>Zade Traders</h2>
+                <p>Authorized POS & Billing System</p>
+            </div>
+            <form id="login-form" class="login-form">
+                <div class="form-group">
+                    <label for="login-username">Operator Username</label>
+                    <div class="input-with-icon" style="position: relative;">
+                        <i class="fa-solid fa-user" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                        <input type="text" id="login-username" class="glass-input" required placeholder="Enter username..." style="padding-left: 36px; width: 100%;">
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 14px;">
+                    <label for="login-password">System Password</label>
+                    <div class="input-with-icon" style="position: relative;">
+                        <i class="fa-solid fa-lock" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                        <input type="password" id="login-password" class="glass-input" required placeholder="Enter password..." style="padding-left: 36px; width: 100%;">
+                    </div>
+                </div>
+                <div id="login-error" class="login-error-msg hidden" style="margin-top: 12px; color: var(--hint-red); font-size: 0.8rem; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-circle-exclamation"></i> <span id="login-error-text">Invalid username or password.</span>
+                </div>
+                <button type="submit" class="btn-primary btn-full-width" style="margin-top: 20px;">
+                    <i class="fa-solid fa-right-to-bracket"></i> Login to System
+                </button>
+            </form>
+        </div>
+    </div>
+
     <!-- Background glowing shapes for glassmorphism aesthetics -->
     <div class="bg-shape shape1"></div>
     <div class="bg-shape shape2"></div>
@@ -43,12 +78,17 @@
                 <a href="#" class="nav-item" data-target="panel-settings"><i class="fa-solid fa-sliders"></i> Settings</a>
             </nav>
 
-            <div class="user-profile">
-                <div class="avatar-icon"><i class="fa-solid fa-user-tie"></i></div>
-                <div class="user-info">
-                    <span class="user-name" id="operator-name">Admin Operator</span>
-                    <span class="home-status"><span class="dot green"></span> System Online</span>
+            <div class="user-profile" style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
+                    <div class="avatar-icon"><i class="fa-solid fa-user-tie"></i></div>
+                    <div class="user-info">
+                        <span class="user-name" id="operator-name">Admin Operator</span>
+                        <span class="home-status"><span class="dot green"></span> System Online</span>
+                    </div>
                 </div>
+                <button class="nav-item btn-logout-action" id="btn-logout" style="width: 100%; border: none; background: rgba(239, 68, 68, 0.1); color: var(--hint-red); text-align: left; padding: 8px 12px; border-radius: 8px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: var(--transition-smooth); margin-top: 4px;">
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
+                </button>
             </div>
         </aside>
 

@@ -1,4 +1,79 @@
 document.addEventListener('DOMContentLoaded', () => {
+  // Override global fetch to automatically inject Authorization token
+  const originalFetch = window.fetch;
+  window.fetch = function(url, options = {}) {
+    if (url.includes('/api/') && !url.includes('/api/auth/login')) {
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        options.headers = options.headers || {};
+        if (options.headers instanceof Headers) {
+          options.headers.set('Authorization', `Bearer ${token}`);
+        } else {
+          options.headers['Authorization'] = `Bearer ${token}`;
+        }
+      }
+    }
+    return originalFetch(url, options).then(async (response) => {
+      if ((response.status === 401 || response.status === 403) && !url.includes('/api/auth/login')) {
+        localStorage.removeItem('auth_token');
+        showToast("Session expired. Please log in again.", "warning");
+        showLoginScreen();
+      }
+      return response;
+    });
+  };
+
+  const showLoginScreen = () => {
+    document.getElementById('login-overlay').classList.remove('hidden');
+    document.getElementById('login-username').value = "";
+    document.getElementById('login-password').value = "";
+    document.getElementById('login-error').classList.add('hidden');
+  };
+
+  const hideLoginScreen = () => {
+    document.getElementById('login-overlay').classList.add('hidden');
+  };
+
+  const handleLoginSubmit = async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('login-username').value;
+    const password = document.getElementById('login-password').value;
+    const errorEl = document.getElementById('login-error');
+    const errorTextEl = document.getElementById('login-error-text');
+
+    errorEl.classList.add('hidden');
+
+    try {
+      const res = await originalFetch(`${API_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        localStorage.setItem('auth_token', data.token);
+        hideLoginScreen();
+        showToast("Welcome! Login successful.", "success");
+        await initApp();
+      } else {
+        errorTextEl.textContent = data.error || "Invalid username or password.";
+        errorEl.classList.remove('hidden');
+      }
+    } catch (err) {
+      errorTextEl.textContent = "Server connection error.";
+      errorEl.classList.remove('hidden');
+    }
+  };
+
+  const handleLogout = () => {
+    if (confirm("Are you sure you want to logout?")) {
+      localStorage.removeItem('auth_token');
+      showToast("Logged out successfully.", "info");
+      showLoginScreen();
+    }
+  };
+
   // ==========================================
   // STATE VARIABLES
   // ==========================================
@@ -2355,5 +2430,25 @@ document.addEventListener('DOMContentLoaded', () => {
   `;
   document.head.appendChild(style);
 
-  initApp();
+  // Bind login form submit
+  document.getElementById('login-form').addEventListener('submit', handleLoginSubmit);
+  
+  // Bind logout button click
+  document.getElementById('btn-logout').addEventListener('click', handleLogout);
+
+  // Boot sequence
+  const boot = async () => {
+    // Load settings first (public API) so brand name shows on login screen
+    await fetchSettings();
+
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      showLoginScreen();
+    } else {
+      hideLoginScreen();
+      await initApp();
+    }
+  };
+
+  boot();
 });

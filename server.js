@@ -1,14 +1,88 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const crypto = require('crypto');
 const db = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const JWT_SECRET = 'zade_traders_pos_jwt_secret_key_2026';
+
+function generateToken(payload) {
+  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+  const body = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const signature = crypto.createHmac('sha256', JWT_SECRET).update(`${header}.${body}`).digest('base64url');
+  return `${header}.${body}.${signature}`;
+}
+
+function verifyToken(token) {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const [header, body, signature] = parts;
+    const expectedSig = crypto.createHmac('sha256', JWT_SECRET).update(`${header}.${body}`).digest('base64url');
+    if (signature !== expectedSig) return null;
+    const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+    if (payload.exp && Date.now() > payload.exp) return null; 
+    return payload;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Authentication middleware
+const authenticateToken = (req, res, next) => {
+  if (req.path === '/api/auth/login' || req.path === '/api/settings' || !req.path.startsWith('/api/')) {
+    return next();
+  }
+
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: "Access token is missing." });
+  }
+
+  const user = verifyToken(token);
+  if (!user) {
+    return res.status(403).json({ error: "Access token is invalid or expired." });
+  }
+
+  req.user = user;
+  next();
+};
+
 app.use(cors());
 app.use(express.json());
+app.use(authenticateToken);
 app.use(express.static(__dirname));
+
+// ==========================================
+// Auth Endpoint
+// ==========================================
+app.post('/api/auth/login', (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ error: "Username and password are required." });
+  }
+
+  const users = db.get('users');
+  const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+  if (!user) {
+    return res.status(401).json({ error: "Invalid username or password." });
+  }
+
+  const passwordHash = crypto.createHash('sha256').update(password).digest('hex');
+  if (passwordHash !== user.passwordHash) {
+    return res.status(401).json({ error: "Invalid username or password." });
+  }
+
+  const exp = Date.now() + 12 * 60 * 60 * 1000;
+  const token = generateToken({ id: user.id, username: user.username, exp });
+
+  res.json({ success: true, token, user: { id: user.id, username: user.username } });
+});
 
 // ==========================================
 // 1. Settings Endpoints
