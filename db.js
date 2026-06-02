@@ -1,8 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const DB_FILE = process.env.DB_PATH || path.join(__dirname, 'data', 'db.json');
-const DB_DIR = path.dirname(DB_FILE);
+
 
 // Default initial database schema with high-quality Building Materials Supplier seed data
 const DEFAULT_DB = {
@@ -130,19 +129,31 @@ const DEFAULT_DB = {
 
 class JSONDatabase {
   constructor() {
+    this.dbFile = process.env.DB_PATH || path.join(__dirname, 'data', 'db.json');
+    this.dbDir = path.dirname(this.dbFile);
     this.init();
   }
 
   init() {
-    if (!fs.existsSync(DB_DIR)) {
-      fs.mkdirSync(DB_DIR, { recursive: true });
+    if (!fs.existsSync(this.dbDir)) {
+      try {
+        fs.mkdirSync(this.dbDir, { recursive: true });
+      } catch (err) {
+        console.error(`Failed to create directory ${this.dbDir}:`, err);
+        console.error("Falling back to relative local data directory.");
+        this.dbFile = path.join(__dirname, 'data', 'db.json');
+        this.dbDir = path.dirname(this.dbFile);
+        if (!fs.existsSync(this.dbDir)) {
+          fs.mkdirSync(this.dbDir, { recursive: true });
+        }
+      }
     }
 
-    if (fs.existsSync(DB_FILE)) {
+    if (fs.existsSync(this.dbFile)) {
       try {
-        const fileContent = fs.readFileSync(DB_FILE, 'utf8');
+        const fileContent = fs.readFileSync(this.dbFile, 'utf8');
         this.data = JSON.parse(fileContent);
-        console.log("Database loaded from existing db.json file.");
+        console.log(`Database loaded from file: ${this.dbFile}`);
         
         // Auto-migrate: seed users table if missing in older JSON db file
         if (!this.data.users) {
@@ -160,20 +171,20 @@ class JSONDatabase {
         }
       } catch (err) {
         console.error("Failed to read database file, initializing default seed db:", err);
-        fs.writeFileSync(DB_FILE, JSON.stringify(DEFAULT_DB, null, 2), 'utf8');
+        fs.writeFileSync(this.dbFile, JSON.stringify(DEFAULT_DB, null, 2), 'utf8');
         this.data = JSON.parse(JSON.stringify(DEFAULT_DB));
       }
     } else {
-      fs.writeFileSync(DB_FILE, JSON.stringify(DEFAULT_DB, null, 2), 'utf8');
+      fs.writeFileSync(this.dbFile, JSON.stringify(DEFAULT_DB, null, 2), 'utf8');
       this.data = JSON.parse(JSON.stringify(DEFAULT_DB));
-      console.log("Database initialized with Building Materials seed data.");
+      console.log(`Database initialized at: ${this.dbFile}`);
     }
   }
 
   // Saves memory state to db.json synchronously
   save() {
     try {
-      fs.writeFileSync(DB_FILE, JSON.stringify(this.data, null, 2), 'utf8');
+      fs.writeFileSync(this.dbFile, JSON.stringify(this.data, null, 2), 'utf8');
       return true;
     } catch (err) {
       console.error("Failed to write to database file:", err);
@@ -184,7 +195,7 @@ class JSONDatabase {
   // Overwrite database to factory default seeds
   reset() {
     try {
-      fs.writeFileSync(DB_FILE, JSON.stringify(DEFAULT_DB, null, 2), 'utf8');
+      fs.writeFileSync(this.dbFile, JSON.stringify(DEFAULT_DB, null, 2), 'utf8');
       this.data = JSON.parse(JSON.stringify(DEFAULT_DB));
       return true;
     } catch (err) {
