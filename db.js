@@ -1,8 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const DB_DIR = path.join(__dirname, 'data');
-const DB_FILE = path.join(DB_DIR, 'db.json');
+const DB_FILE = process.env.DB_PATH || path.join(__dirname, 'data', 'db.json');
+const DB_DIR = path.dirname(DB_FILE);
 
 // Default initial database schema with high-quality Building Materials Supplier seed data
 const DEFAULT_DB = {
