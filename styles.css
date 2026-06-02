@@ -926,6 +926,15 @@ body {
   top: 32px;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+}
+
+.pos-cart > * {
+  flex-shrink: 0;
+}
+
+.pos-cart > .cart-items-container {
+  flex-shrink: 1;
 }
 
 .cart-header {
@@ -990,6 +999,7 @@ body {
   flex-direction: column;
   gap: 10px;
   padding-right: 4px;
+  min-height: 165px;
 }
 
 .cart-empty-state {
