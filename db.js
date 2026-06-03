@@ -55,10 +55,20 @@ class SQLiteDatabase {
         address TEXT,
         phone TEXT,
         gstin TEXT,
+        pan TEXT,
+        bankName TEXT,
+        bankAc TEXT,
+        bankIfsc TEXT,
         upiId TEXT,
         currency TEXT
       )
     `);
+
+    // Migrate schema if columns are missing in older db versions
+    try { await this.db.exec('ALTER TABLE settings ADD COLUMN pan TEXT'); } catch(e){}
+    try { await this.db.exec('ALTER TABLE settings ADD COLUMN bankName TEXT'); } catch(e){}
+    try { await this.db.exec('ALTER TABLE settings ADD COLUMN bankAc TEXT'); } catch(e){}
+    try { await this.db.exec('ALTER TABLE settings ADD COLUMN bankIfsc TEXT'); } catch(e){}
 
     // 2. users table
     await this.db.exec(`
@@ -196,10 +206,10 @@ class SQLiteDatabase {
   async seedDefaultData() {
     console.log("Seeding default data into SQLite database...");
     
-    // Seed settings
+    // Seed settings with Zade Traders actual data
     await this.db.run(`
-      INSERT INTO settings (id, shopName, address, phone, gstin, upiId, currency)
-      VALUES (1, 'Zade Traders', 'MIDC Road, Near Main Chowk, Umred - 441203', '+91 94228 12345', '27GHIJK5678L1Z9', 'zadetraders@okaxis', '₹')
+      INSERT INTO settings (id, shopName, address, phone, gstin, pan, bankName, bankAc, bankIfsc, upiId, currency)
+      VALUES (1, 'Zade Traders', 'Girad Bypass Road, Umred, Dist - Nagpur - 441203', '+91 98503 55126', '27AADPZ2438A1ZT', 'AADPZ2438A', 'Canara Bank', '3126261000023', 'CNRB0003126', '9850355126@okaxis', '₹')
     `);
 
     // Seed users (hash admin123 with bcryptjs)
@@ -228,7 +238,7 @@ class SQLiteDatabase {
 
     // Seed suppliers
     const suppliers = [
-      { name: "Nagpur Cement Distributors", phone: "+91 98222 98765", address: "Cement Depot, MIDC, Nagpur", gstin: "27AAAAA1111A1Z1", balance: 45000 },
+      { name: "Ramsukh Iron", phone: "+91 94222 65140", address: "Plot No. 155A, V.C.A. Ground Road, Near Fire Brigade, Nagpur - 440008", gstin: "27AKHPT8240J1ZN", balance: 45000 },
       { name: "Jindal Steel Depot (Umred)", phone: "+91 99234 44321", address: "MIDC Area, Plot No. 12, Umred", gstin: "27BBBBB2222B1Z2", balance: 120000 },
       { name: "Local Bricks Kiln (Umred)", phone: "+91 94217 66554", address: "Girad Road, Umred", gstin: "", balance: 0 }
     ];

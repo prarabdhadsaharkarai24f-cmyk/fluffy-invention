@@ -722,6 +722,22 @@
                                 <input type="text" id="shop-gstin" class="glass-input" required>
                             </div>
                             <div class="form-group">
+                                <label for="shop-pan">PAN Number (Permanent Account Number)</label>
+                                <input type="text" id="shop-pan" class="glass-input" required placeholder="e.g. AADPZ2438A">
+                            </div>
+                            <div class="form-group">
+                                <label for="shop-bank-name">Bank Name</label>
+                                <input type="text" id="shop-bank-name" class="glass-input" required placeholder="e.g. Canara Bank">
+                            </div>
+                            <div class="form-group">
+                                <label for="shop-bank-ac">Bank Account Number</label>
+                                <input type="text" id="shop-bank-ac" class="glass-input" required placeholder="e.g. 3126261000023">
+                            </div>
+                            <div class="form-group">
+                                <label for="shop-bank-ifsc">Branch & IFSC Code</label>
+                                <input type="text" id="shop-bank-ifsc" class="glass-input" required placeholder="e.g. WARDHMAN NAGAR NAGPUR & CNRB0003126">
+                            </div>
+                            <div class="form-group">
                                 <label for="shop-upi">Merchant UPI ID (for QR billing)</label>
                                 <input type="text" id="shop-upi" class="glass-input" required placeholder="e.g. zadetraders@okaxis">
                                 <span class="input-tip">Dynamic QR code scanner will pay directly to this address.</span>
@@ -956,94 +972,166 @@
                     </div>
                     
                     <div class="invoice-container" id="printable-invoice">
-                        <!-- Invoice Header -->
-                        <div class="invoice-header-print">
-                            <h1 id="inv-shop-name">ZADE TRADERS</h1>
-                            <p id="inv-shop-address">MIDC Road, Near Main Chowk, Umred - 441203</p>
-                            <p id="inv-shop-phone">Phone: +91 94228 12345</p>
-                            <p id="inv-shop-gstin">GSTIN: 27GHIJK5678L1Z9</p>
-                            <h2 class="receipt-title">TAX INVOICE</h2>
-                        </div>
-
-                        <hr class="invoice-divider">
-
-                        <!-- Invoice Details -->
-                        <div class="invoice-meta-grid">
-                            <div>
-                                <p><strong>Invoice No:</strong> <span id="inv-no">ZT-2026-0005</span></p>
-                                <p><strong>Date & Time:</strong> <span id="inv-date">01/06/2026 18:45</span></p>
+                        <!-- GST A4 Tax Invoice Layout -->
+                        <div class="a4-tax-invoice">
+                            <!-- Top row: Shree Ganeshay Namah & Original copy info -->
+                            <div class="invoice-top-row">
+                                <span>SHREE GANESHAYA NAMAHA</span>
+                                <span class="original-title">TAX INVOICE (ORIGINAL FOR RECIPIENT)</span>
                             </div>
-                            <div class="text-right">
-                                <p><strong>Customer:</strong> <span id="inv-customer-name">Cash Customer</span></p>
-                                <p id="inv-customer-phone-row" style="margin: 2px 0 0 0;"><strong>Phone:</strong> <span id="inv-customer-phone">-</span></p>
-                                <p id="inv-customer-address-row" style="margin: 2px 0 0 0;"><strong>Address:</strong> <span id="inv-customer-address">-</span></p>
-                                <p id="inv-customer-gstin-row" style="margin: 2px 0 0 0;"><strong>GSTIN:</strong> <span id="inv-customer-gstin">-</span></p>
-                                <p style="margin: 4px 0 0 0;"><strong>Payment Mode:</strong> <span id="inv-payment-method">Cash</span></p>
+                            
+                            <!-- E-Invoice IRN & QR Row -->
+                            <div class="einvoice-row">
+                                <div class="einvoice-left">
+                                    <p><strong>IRN:</strong> <span id="inv-irn">5265359ae4162592fea42fcbdb830c0f9ed8dbd5f1aaa947e0c0d3034cfa80dd</span></p>
+                                    <div class="einvoice-ack-details">
+                                        <p><strong>Ack No:</strong> <span id="inv-ack-no">122631861205997</span></p>
+                                        <p><strong>Ack Date:</strong> <span id="inv-ack-date">31-Mar-2026</span></p>
+                                    </div>
+                                </div>
+                                <div class="einvoice-right">
+                                    <div class="mock-qr-code">
+                                        <i class="fa-solid fa-qrcode" style="font-size: 50px;"></i>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-
-                        <!-- Invoice Items Table -->
-                        <table class="invoice-table">
-                            <thead>
-                                <tr>
-                                    <th>Material details</th>
-                                    <th class="text-center">GST %</th>
-                                    <th class="text-right">Rate</th>
-                                    <th class="text-center">Qty</th>
-                                    <th class="text-right">Total (Inc. GST)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="invoice-items-body">
-                                <!-- Dynamically loaded -->
-                            </tbody>
-                        </table>
-
-                        <hr class="invoice-divider">
-
-                        <!-- Invoice Calculations -->
-                        <div class="invoice-summary-grid">
-                            <div class="invoice-summary-col">
-                                <table class="gst-breakdown-table" id="inv-gst-breakdown">
-                                    <thead>
+                            
+                            <!-- Seller & Invoice Details Split Section -->
+                            <div class="invoice-grid-split">
+                                <!-- Seller Block -->
+                                <div class="seller-details-box">
+                                    <div class="box-header">Seller Details</div>
+                                    <h3 id="inv-shop-name" style="margin: 0 0 5px 0; font-size: 1.1rem; font-weight: 700;">ZADE TRADERS</h3>
+                                    <p id="inv-shop-address" style="margin: 0 0 4px 0;">MIDC Road, Near Main Chowk, Umred - 441203</p>
+                                    <p id="inv-shop-phone" style="margin: 0 0 4px 0;"><strong>Phone:</strong> +91 94228 12345</p>
+                                    <p id="inv-shop-gstin-label" style="margin: 0 0 4px 0;"><strong>GSTIN/UIN:</strong> <span id="inv-shop-gstin">27GHIJK5678L1Z9</span></p>
+                                    <p id="inv-shop-pan-label" style="margin: 0 0 4px 0;"><strong>PAN/IT No:</strong> <span id="inv-shop-pan">AADPZ2438A</span></p>
+                                    <p style="margin: 0;"><strong>State Name:</strong> Maharashtra, Code: 27</p>
+                                </div>
+                                
+                                <!-- Invoice Details Table Grid -->
+                                <div class="meta-details-box">
+                                    <table class="meta-table">
                                         <tr>
-                                            <th>GST Rate</th>
-                                            <th>Taxable Val</th>
-                                            <th>CGST</th>
-                                            <th>SGST</th>
+                                            <td><strong>Invoice No:</strong><br><span id="inv-no">ZT-2026-0005</span></td>
+                                            <td><strong>Dated:</strong><br><span id="inv-date">30-Mar-26</span></td>
                                         </tr>
-                                    </thead>
-                                    <tbody id="inv-gst-breakdown-body">
-                                        <!-- Computed dynamic breakdown -->
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="invoice-summary-col text-right grand-totals-col">
-                                <div class="summary-line">
-                                    <span>Subtotal (Excl. Tax):</span>
-                                    <span id="inv-subtotal">₹0.00</span>
-                                </div>
-                                <div class="summary-line">
-                                    <span>GST Amount:</span>
-                                    <span id="inv-gst">₹0.00</span>
-                                </div>
-                                <div class="summary-line">
-                                    <span>Discount Applied:</span>
-                                    <span id="inv-discount">₹0.00</span>
-                                </div>
-                                <div class="summary-line grand-total">
-                                    <span>NET AMOUNT DUE:</span>
-                                    <strong id="inv-total">₹0.00</strong>
+                                        <tr>
+                                            <td><strong>e-Way Bill No:</strong><br><span id="inv-eway-bill" class="editable-print-field" contenteditable="true">212172275319</span></td>
+                                            <td><strong>Mode/Terms of Payment:</strong><br><span id="inv-payment-method">Khata (NEXT DAY)</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Buyer's Order No:</strong><br><span class="editable-print-field" contenteditable="true">-</span></td>
+                                            <td><strong>Dated:</strong><br><span class="editable-print-field" contenteditable="true">-</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Dispatched through:</strong><br><span class="editable-print-field" contenteditable="true">Local Transport</span></td>
+                                            <td><strong>Destination:</strong><br><span id="inv-destination" class="editable-print-field" contenteditable="true">Umred</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Terms of Delivery:</strong><br><span class="editable-print-field" contenteditable="true">TO PAY</span></td>
+                                            <td><strong>Motor Vehicle No:</strong><br><span id="inv-vehicle-no" class="editable-print-field" contenteditable="true">MH40N6046</span></td>
+                                        </tr>
+                                    </table>
                                 </div>
                             </div>
-                        </div>
-
-                        <hr class="invoice-divider">
-
-                        <!-- Invoice Footer -->
-                        <div class="invoice-footer-print">
-                            <p>Thank you for your construction business!</p>
-                            <p>Terms: Goods once sold will not be taken back. Subject to Umred Jurisdiction.</p>
-                            <p class="invoice-stamp">For ZADE TRADERS<br><br><br>Authorized Signatory</p>
+                            
+                            <!-- Buyer Block -->
+                            <div class="buyer-details-box">
+                                <div class="box-header">Buyer (Bill to) Details</div>
+                                <h3 id="inv-customer-name" style="margin: 0 0 4px 0; font-weight: 700;">Ramesh Gawande (Contractor)</h3>
+                                <p id="inv-customer-address" style="margin: 0 0 4px 0;">Umred Rural, Ward No. 2</p>
+                                <p id="inv-customer-phone-row" style="margin: 0 0 4px 0;"><strong>Phone:</strong> <span id="inv-customer-phone">+91 98234 56789</span></p>
+                                <p id="inv-customer-gstin-row" style="margin: 0 0 4px 0;"><strong>GSTIN/UIN:</strong> <span id="inv-customer-gstin">27AADPZ2438A1ZT</span></p>
+                                <p id="inv-customer-state-row" style="margin: 0;"><strong>State Name:</strong> Maharashtra, Code: 27</p>
+                            </div>
+                            
+                            <!-- Product Items Table -->
+                            <table class="tax-invoice-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 5%;">Sl No.</th>
+                                        <th style="width: 35%;">Description of Goods</th>
+                                        <th style="width: 12%;">HSN/SAC</th>
+                                        <th style="width: 10%;">GST Rate</th>
+                                        <th style="width: 10%;">Quantity</th>
+                                        <th style="width: 12%;">Rate (Incl. Tax)</th>
+                                        <th style="width: 12%;">Rate (Excl. Tax)</th>
+                                        <th style="width: 8%;">per</th>
+                                        <th style="width: 15%;">Amount (Taxable)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="invoice-items-body">
+                                    <!-- Loaded dynamically -->
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="4" class="text-right"><strong>Total</strong></td>
+                                        <td id="inv-total-qty" class="text-center"><strong>0.00</strong></td>
+                                        <td colspan="3"></td>
+                                        <td id="inv-total-taxable" class="text-right"><strong>₹0.00</strong></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                            
+                            <!-- Summary Calculations Section -->
+                            <div class="summary-calculations-box">
+                                <div class="words-and-totals">
+                                    <div class="amount-in-words">
+                                        <p style="margin: 0 0 4px 0;"><strong>Amount Chargeable (in words):</strong></p>
+                                        <p id="inv-amount-in-words" style="font-style: italic; font-weight: 600; text-transform: capitalize; margin: 0; line-height: 1.4; color: #111;">Indian Rupees Three Lakh Fifty Thousand Six Hundred Fifty Only</p>
+                                    </div>
+                                    <div class="tax-summary-block" style="margin-top: 15px;">
+                                        <table class="gst-summary-table" id="inv-gst-breakdown" style="width: 100%; border-collapse: collapse; margin-top: 5px;">
+                                            <thead>
+                                                <tr>
+                                                    <th rowspan="2">HSN/SAC</th>
+                                                    <th rowspan="2">Taxable Value</th>
+                                                    <th colspan="2">Central Tax (CGST)</th>
+                                                    <th colspan="2">State Tax (SGST)</th>
+                                                    <th rowspan="2">Total Tax</th>
+                                                </tr>
+                                                <tr>
+                                                    <th>Rate</th>
+                                                    <th>Amount</th>
+                                                    <th>Rate</th>
+                                                    <th>Amount</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="inv-gst-breakdown-body">
+                                                <!-- Dynamic breakdown -->
+                                            </tbody>
+                                            <tfoot>
+                                                <tr id="inv-gst-breakdown-total-row">
+                                                    <!-- Dynamic breakdown total -->
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                        <p style="margin: 8px 0 0 0; font-size: 0.75rem; line-height: 1.4;"><strong>Tax Amount (in words):</strong> <span id="inv-tax-in-words" style="font-style: italic; font-weight: 600;">Indian Rupees Fifty Three Thousand Four Hundred Eighty Eight Only</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Bank Details & Declarations Footer -->
+                            <div class="invoice-bottom-grid" style="display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 15px; margin-top: 15px; border-top: 1px solid #000; padding-top: 10px;">
+                                <div class="bank-details-block" style="font-size: 0.75rem;">
+                                    <div style="font-weight: bold; text-decoration: underline; margin-bottom: 4px;">Company's Bank Details</div>
+                                    <table class="bank-table" style="width: 100%;">
+                                        <tr><td style="width: 35%;"><strong>Bank Name:</strong></td><td id="inv-bank-name">Canara Bank</td></tr>
+                                        <tr><td><strong>A/c No:</strong></td><td id="inv-bank-ac">3126261000023</td></tr>
+                                        <tr><td><strong>IFS Code:</strong></td><td id="inv-bank-ifsc">CNRB0003126</td></tr>
+                                        <tr><td><strong>UPI ID:</strong></td><td id="inv-bank-upi">9850355126@okaxis</td></tr>
+                                    </table>
+                                </div>
+                                <div class="declarations-block" style="font-size: 0.7rem; line-height: 1.3;">
+                                    <p style="margin: 0 0 4px 0; font-weight: bold;">Declaration:</p>
+                                    <p style="margin: 0;">We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct. Subject to Nagpur Jurisdiction.</p>
+                                </div>
+                                <div class="signatory-block text-right" style="font-size: 0.75rem;">
+                                    <p style="margin: 0 0 40px 0; font-weight: bold;">For ZADE TRADERS</p>
+                                    <p style="margin: 0; border-top: 1px dashed #444; display: inline-block; padding-top: 4px;">Authorized Signatory</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

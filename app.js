@@ -861,85 +861,201 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  const getHsnCode = (categoryOrName) => {
+    const name = (categoryOrName || '').toLowerCase();
+    if (name.includes('cement')) return '25232910';
+    if (name.includes('steel') || name.includes('bar') || name.includes('tmt') || name.includes('iron')) return '72141090';
+    if (name.includes('brick')) return '69010010';
+    if (name.includes('sand') || name.includes('aggregate') || name.includes('ganga')) return '25051010';
+    if (name.includes('paint') || name.includes('apex')) return '32089020';
+    if (name.includes('plumb') || name.includes('pvc') || name.includes('pipe')) return '39174000';
+    return '72141090';
+  };
+
+  const numberToWords = (num) => {
+    const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
+    const b = ['', '', 'Twenty ', 'Thirty ', 'Forty ', 'Fifty ', 'Sixty ', 'Seventy ', 'Eighty ', 'Ninety '];
+
+    if ((num = num.toString()).length > 9) return 'overflow';
+    const n = ('000000000' + num).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+    if (!n) return '';
+    let str = '';
+    str += (n[1] != 0) ? (a[Number(n[1])] || b[n[1][0]] + a[n[1][1]]) + 'Crore ' : '';
+    str += (n[2] != 0) ? (a[Number(n[2])] || b[n[2][0]] + a[n[2][1]]) + 'Lakh ' : '';
+    str += (n[3] != 0) ? (a[Number(n[3])] || b[n[3][0]] + a[n[3][1]]) + 'Thousand ' : '';
+    str += (n[4] != 0) ? (a[Number(n[4])] || b[n[4][0]] + a[n[4][1]]) + 'Hundred ' : '';
+    str += (n[5] != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n[5])] || b[n[5][0]] + a[n[5][1]]) : '';
+    return str.trim() ? str.trim() + ' Only' : 'Zero Only';
+  };
+
+  const convertNumberToWords = (amount) => {
+    const parts = parseFloat(amount).toFixed(2).split('.');
+    const rupees = parseInt(parts[0], 10);
+    const paise = parseInt(parts[1], 10);
+    
+    let result = "Indian Rupees " + numberToWords(rupees);
+    if (paise > 0) {
+      result += " and " + numberToWords(paise).replace(" Only", "") + " Paise Only";
+    }
+    return result;
+  };
+
   const launchPrintableInvoice = (invoice) => {
     const modal = document.getElementById('modal-invoice-receipt');
     
-    document.getElementById('inv-no').textContent = invoice.invoiceNo;
-    document.getElementById('inv-date').textContent = new Date(invoice.date).toLocaleString('en-IN');
-    document.getElementById('inv-customer-name').textContent = invoice.customerName;
-    document.getElementById('inv-payment-method').textContent = invoice.paymentMethod;
+    // Bind Shop Details (Seller)
+    document.getElementById('inv-shop-name').textContent = currentSettings.shopName.toUpperCase();
+    document.getElementById('inv-shop-address').textContent = currentSettings.address;
+    document.getElementById('inv-shop-phone').innerHTML = '<strong>Phone:</strong> ' + currentSettings.phone;
+    document.getElementById('inv-shop-gstin').textContent = currentSettings.gstin || 'N/A';
+    document.getElementById('inv-shop-pan').textContent = currentSettings.pan || 'AADPZ2438A';
 
-    // Look up customer phone, address, and GSTIN from customers list
+    // Bind Bank Details
+    document.getElementById('inv-bank-name').textContent = currentSettings.bankName || 'Canara Bank';
+    document.getElementById('inv-bank-ac').textContent = currentSettings.bankAc || '3126261000023';
+    document.getElementById('inv-bank-ifsc').textContent = currentSettings.bankIfsc || 'CNRB0003126';
+    document.getElementById('inv-bank-upi').textContent = currentSettings.upiId || '9850355126@okaxis';
+
+    // Bind Invoice Details
+    document.getElementById('inv-no').textContent = invoice.invoiceNo;
+    document.getElementById('inv-date').textContent = new Date(invoice.date).toLocaleDateString('en-IN');
+    
+    // Auto-generate e-way bill number and vehicle number for realistic prints
+    document.getElementById('inv-eway-bill').textContent = Math.floor(100000000000 + Math.random() * 900000000000);
+    document.getElementById('inv-vehicle-no').textContent = 'MH40N' + Math.floor(1000 + Math.random() * 9000);
+    
+    document.getElementById('inv-payment-method').textContent = invoice.paymentMethod + (invoice.paymentMethod === 'Khata' ? ' (NEXT DAY)' : '');
+
+    // Bind Buyer Details
+    document.getElementById('inv-customer-name').textContent = invoice.customerName;
     const customer = customers.find(c => c.id === invoice.customerId);
     if (customer && invoice.customerId > 0) {
       document.getElementById('inv-customer-phone').textContent = customer.phone || 'N/A';
       document.getElementById('inv-customer-address').textContent = customer.address || 'N/A';
       document.getElementById('inv-customer-gstin').textContent = customer.gstin || 'N/A';
-      document.getElementById('inv-customer-phone-row').style.display = 'block';
-      document.getElementById('inv-customer-address-row').style.display = 'block';
-      document.getElementById('inv-customer-gstin-row').style.display = 'block';
     } else {
-      document.getElementById('inv-customer-phone-row').style.display = 'none';
-      document.getElementById('inv-customer-address-row').style.display = 'none';
-      document.getElementById('inv-customer-gstin-row').style.display = 'none';
+      document.getElementById('inv-customer-phone').textContent = 'N/A';
+      document.getElementById('inv-customer-address').textContent = 'Umred, Nagpur';
+      document.getElementById('inv-customer-gstin').textContent = 'N/A';
     }
 
-    const receiptTitle = modal.querySelector('.receipt-title');
+    // Toggle Estimate vs Tax Invoice Title
+    const originalTitle = modal.querySelector('.original-title');
+    const einvoiceRow = modal.querySelector('.einvoice-row');
+    const taxSummaryBlock = modal.querySelector('.tax-summary-block');
+    const shopGstinLabel = document.getElementById('inv-shop-gstin-label');
+    const shopPanLabel = document.getElementById('inv-shop-pan-label');
+
     if (invoice.billType === "Non-GST") {
-      receiptTitle.textContent = "ESTIMATE BILL";
-      document.getElementById('inv-shop-gstin').style.display = 'none';
-      document.getElementById('inv-gst-breakdown').style.display = 'none';
-      document.getElementById('inv-gst').closest('.summary-line').style.display = 'none';
+      originalTitle.textContent = "ESTIMATE BILL (NON-GST)";
+      if (einvoiceRow) einvoiceRow.style.display = 'none';
+      if (taxSummaryBlock) taxSummaryBlock.style.display = 'none';
+      if (shopGstinLabel) shopGstinLabel.style.display = 'none';
+      if (shopPanLabel) shopPanLabel.style.display = 'none';
     } else {
-      receiptTitle.textContent = "TAX INVOICE";
-      document.getElementById('inv-shop-gstin').style.display = 'block';
-      document.getElementById('inv-gst-breakdown').style.display = 'table';
-      document.getElementById('inv-gst').closest('.summary-line').style.display = 'flex';
+      originalTitle.textContent = "TAX INVOICE (ORIGINAL FOR RECIPIENT)";
+      if (einvoiceRow) einvoiceRow.style.display = 'flex';
+      if (taxSummaryBlock) taxSummaryBlock.style.display = 'block';
+      if (shopGstinLabel) shopGstinLabel.style.display = 'block';
+      if (shopPanLabel) shopPanLabel.style.display = 'block';
     }
     
+    // Bind Items table
+    let totalQty = 0;
+    let totalTaxableValue = 0;
     const tableBody = document.getElementById('invoice-items-body');
-    tableBody.innerHTML = invoice.items.map(item => {
+
+    tableBody.innerHTML = invoice.items.map((item, index) => {
       const rate = invoice.billType === "Non-GST" ? 0 : item.gstRate;
+      const unitPriceExclTax = item.price / (1 + (rate / 100));
+      const itemTaxableAmount = unitPriceExclTax * item.qty;
+      
+      totalQty += item.qty;
+      totalTaxableValue += itemTaxableAmount;
+      
+      const hsn = getHsnCode(item.name);
+
       return `
         <tr>
-          <td>${item.name}</td>
+          <td class="text-center">${index + 1}</td>
+          <td>
+            <strong>${item.name}</strong>
+          </td>
+          <td class="text-center">${hsn}</td>
           <td class="text-center">${rate}%</td>
-          <td class="text-right">₹${item.price.toFixed(2)}</td>
           <td class="text-center">${item.qty} ${item.unit}</td>
-          <td class="text-right">₹${item.total.toFixed(2)}</td>
+          <td class="text-right">₹${item.price.toFixed(2)}</td>
+          <td class="text-right">₹${unitPriceExclTax.toFixed(2)}</td>
+          <td class="text-center">${item.unit}</td>
+          <td class="text-right">₹${itemTaxableAmount.toFixed(2)}</td>
         </tr>
       `;
     }).join('');
 
-    document.getElementById('inv-subtotal').textContent = `₹${invoice.subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
-    document.getElementById('inv-gst').textContent = `₹${invoice.gstTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
-    document.getElementById('inv-discount').textContent = `₹${invoice.discount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
-    document.getElementById('inv-total').textContent = `₹${invoice.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    document.getElementById('inv-total-qty').innerHTML = `<strong>${totalQty.toFixed(3)}</strong>`;
+    document.getElementById('inv-total-taxable').innerHTML = `<strong>₹${totalTaxableValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>`;
+    document.getElementById('inv-amount-in-words').textContent = convertNumberToWords(invoice.total);
 
+    // Bind Tax Summary Table
     const breakdownBody = document.getElementById('inv-gst-breakdown-body');
     const gstGroups = {};
     invoice.items.forEach(item => {
       const rate = invoice.billType === "Non-GST" ? 0 : item.gstRate;
-      if (!gstGroups[rate]) {
-        gstGroups[rate] = { taxable: 0, gst: 0 };
+      const hsn = getHsnCode(item.name);
+      const key = `${hsn}_${rate}`;
+      if (!gstGroups[key]) {
+        gstGroups[key] = { hsn, rate, taxable: 0, gst: 0 };
       }
-      const itemTaxable = item.total / (1 + (rate / 100));
-      gstGroups[rate].taxable += itemTaxable;
-      gstGroups[rate].gst += (item.total - itemTaxable);
+      const unitPriceExclTax = item.price / (1 + (rate / 100));
+      const itemTaxableAmount = unitPriceExclTax * item.qty;
+      gstGroups[key].taxable += itemTaxableAmount;
+      gstGroups[key].gst += (item.total - itemTaxableAmount);
     });
 
-    breakdownBody.innerHTML = Object.keys(gstGroups).map(rate => {
-      const g = gstGroups[rate];
-      if (parseInt(rate) === 0) return '';
+    let grandTaxable = 0;
+    let grandCgst = 0;
+    let grandSgst = 0;
+    let grandTotalTax = 0;
+
+    breakdownBody.innerHTML = Object.values(gstGroups).map(g => {
+      if (g.rate === 0) return '';
+      const cgstAmt = g.gst / 2;
+      const sgstAmt = g.gst / 2;
+      const cgstRate = g.rate / 2;
+      const sgstRate = g.rate / 2;
+      
+      grandTaxable += g.taxable;
+      grandCgst += cgstAmt;
+      grandSgst += sgstAmt;
+      grandTotalTax += g.gst;
+
       return `
         <tr>
-          <td>${rate}%</td>
-          <td>₹${g.taxable.toFixed(2)}</td>
-          <td>₹${(g.gst / 2).toFixed(2)}</td>
-          <td>₹${(g.gst / 2).toFixed(2)}</td>
+          <td class="text-center">${g.hsn}</td>
+          <td class="text-right">₹${g.taxable.toFixed(2)}</td>
+          <td class="text-center">${cgstRate}%</td>
+          <td class="text-right">₹${cgstAmt.toFixed(2)}</td>
+          <td class="text-center">${sgstRate}%</td>
+          <td class="text-right">₹${sgstAmt.toFixed(2)}</td>
+          <td class="text-right">₹${g.gst.toFixed(2)}</td>
         </tr>
       `;
     }).join('');
+
+    const breakdownTotalRow = document.getElementById('inv-gst-breakdown-total-row');
+    if (breakdownTotalRow) {
+      breakdownTotalRow.innerHTML = `
+        <td class="text-center"><strong>Total</strong></td>
+        <td class="text-right"><strong>₹${grandTaxable.toFixed(2)}</strong></td>
+        <td></td>
+        <td class="text-right"><strong>₹${grandCgst.toFixed(2)}</strong></td>
+        <td></td>
+        <td class="text-right"><strong>₹${grandSgst.toFixed(2)}</strong></td>
+        <td class="text-right"><strong>₹${grandTotalTax.toFixed(2)}</strong></td>
+      `;
+    }
+
+    document.getElementById('inv-tax-in-words').textContent = convertNumberToWords(grandTotalTax);
 
     modal.classList.remove('hidden');
   };
@@ -2164,6 +2280,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('shop-name').value = currentSettings.shopName;
     document.getElementById('shop-phone').value = currentSettings.phone;
     document.getElementById('shop-gstin').value = currentSettings.gstin;
+    document.getElementById('shop-pan').value = currentSettings.pan || '';
+    document.getElementById('shop-bank-name').value = currentSettings.bankName || '';
+    document.getElementById('shop-bank-ac').value = currentSettings.bankAc || '';
+    document.getElementById('shop-bank-ifsc').value = currentSettings.bankIfsc || '';
     document.getElementById('shop-upi').value = currentSettings.upiId;
     document.getElementById('shop-address').value = currentSettings.address;
   };
@@ -2175,6 +2295,10 @@ document.addEventListener('DOMContentLoaded', () => {
       shopName: document.getElementById('shop-name').value,
       phone: document.getElementById('shop-phone').value,
       gstin: document.getElementById('shop-gstin').value,
+      pan: document.getElementById('shop-pan').value,
+      bankName: document.getElementById('shop-bank-name').value,
+      bankAc: document.getElementById('shop-bank-ac').value,
+      bankIfsc: document.getElementById('shop-bank-ifsc').value,
       upiId: document.getElementById('shop-upi').value,
       address: document.getElementById('shop-address').value
     };
