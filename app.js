@@ -941,20 +941,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Toggle Estimate vs Tax Invoice Title
     const originalTitle = modal.querySelector('.original-title');
-    const einvoiceRow = modal.querySelector('.einvoice-row');
     const taxSummaryBlock = modal.querySelector('.tax-summary-block');
     const shopGstinLabel = document.getElementById('inv-shop-gstin-label');
     const shopPanLabel = document.getElementById('inv-shop-pan-label');
 
     if (invoice.billType === "Non-GST") {
       originalTitle.textContent = "ESTIMATE BILL (NON-GST)";
-      if (einvoiceRow) einvoiceRow.style.display = 'none';
       if (taxSummaryBlock) taxSummaryBlock.style.display = 'none';
       if (shopGstinLabel) shopGstinLabel.style.display = 'none';
       if (shopPanLabel) shopPanLabel.style.display = 'none';
     } else {
       originalTitle.textContent = "TAX INVOICE (ORIGINAL FOR RECIPIENT)";
-      if (einvoiceRow) einvoiceRow.style.display = 'flex';
       if (taxSummaryBlock) taxSummaryBlock.style.display = 'block';
       if (shopGstinLabel) shopGstinLabel.style.display = 'block';
       if (shopPanLabel) shopPanLabel.style.display = 'block';
